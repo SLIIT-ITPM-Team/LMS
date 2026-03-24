@@ -1,23 +1,29 @@
-const express = require('express');
-const cors = require('cors');
 
-const app = express();
 
-const authRoutes = require('./routes/auth.routes');
-const departmentRoutes = require('./routes/department.routes');
-const moduleRoutes = require('./routes/module.routes');
+import './App.css';
 
-// Middleware
-app.use(cors());
-app.use(express.json());
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/modules', moduleRoutes);
+import AddSummary from './components/AddSummary';
+import Quits from './components/quits';
 
-app.get('/', (req, res) => {
-    res.send('LMS API is running...');
-});
 
-module.exports = app;
+import { BrowserRouter as Router,Route,Routes } from "react-router-dom"
+
+
+
+
+function App() {
+  return (
+<Router>
+     <div>
+      <Routes>
+        <Route path="/add-summary" element={<AddSummary />} />
+        <Route path="/quiz/:id/quits" element={<Quits />} />
+        <Route path="/" element={<AddSummary />} />
+      </Routes>
+    </div>
+    </Router>
+  );
+}
+
+export default App;
