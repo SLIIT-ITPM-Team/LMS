@@ -7,10 +7,11 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-const DEFAULT_PORT = Number(process.env.PORT) || 8070;
+const DEFAULT_PORT = Number(process.env.PORT) || 5001;
 
 // Ensure uploads directories exist
 const fs = require('fs');
@@ -40,11 +41,20 @@ connection.on('error', (error) => {
 
 // Routes
 const quizRouter = require('./routes/quiz.routes.js');
-app.use('/quiz', quizRouter);
+const communityRouter = require('./routes/community.routes.js');
+const { initializeSocket } = require('./config/socketConfig.js');
+
+app.use('/api/quiz', quizRouter);
+app.use('/api/community', communityRouter);
 
 // Start server
 function startServer(port, retriesLeft = 5) {
-    const server = app.listen(port, () => {
+    const server = http.createServer(app);
+    
+    // Initialize Socket.io
+    initializeSocket(server);
+
+    server.listen(port, () => {
         console.log(`Server is up and running on port number: ${port}`);
     });
 
