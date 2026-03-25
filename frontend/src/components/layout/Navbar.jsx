@@ -1,21 +1,39 @@
 import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, UserCircle2, ChevronDown } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
-const baseLinks = [
+const guestLinks = [
 	{ to: "/", label: "Home" },
-	{ to: "/courses", label: "Cources" },
-	{ to: "/add-summary", label: "Quizes" },
-	{ to: "/materials", label: "Materials" },
+	{ to: "/courses/1", label: "Cources" },
+	{ to: "/quiz/1", label: "Quizes" },
 	{ to: "/community", label: "Community" },
+];
+
+const studentLinks = [
+	{ to: "/dashboard", label: "Dashboard" },
+	{ to: "/courses/1", label: "My Courses" },
+	{ to: "/quiz/1", label: "Quizzes" },
+	{ to: "/community", label: "Community" },
+	{ to: "/certificates", label: "Certificates" },
+];
+
+const adminLinks = [
+	{ to: "/admin", label: "Dashboard" },
+	{ to: "/admin/users", label: "Users" },
+	{ to: "/admin/modules", label: "Modules" },
+	{ to: "/admin/departments", label: "Departments" },
+	{ to: "/admin/reports", label: "Reports" },
 ];
 
 const Navbar = () => {
 	const [open, setOpen] = useState(false);
-	const { isAuthenticated, user, logout } = useAuth();
+	const [profileOpen, setProfileOpen] = useState(false);
+	const { isAuthenticated, user, logout, isAdmin } = useAuth();
 	const navigate = useNavigate();
+
+	const currentLinks = isAuthenticated ? (isAdmin ? adminLinks : studentLinks) : guestLinks;
 
 	const navLinkClass = ({ isActive }) =>
 		`rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -24,9 +42,9 @@ const Navbar = () => {
 				: "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
 		}`;
 
-	const handleLogout = () => {
-		logout();
-		navigate("/");
+	const handleLogout = async () => {
+		await logout();
+		navigate("/", { replace: true });
 	};
 
 	return (
@@ -40,7 +58,7 @@ const Navbar = () => {
 				</Link>
 
 				<div className="hidden items-center gap-1 md:flex">
-					{baseLinks.map((item) => (
+					{currentLinks.map((item) => (
 						<NavLink key={item.label} to={item.to} className={navLinkClass}>
 							{item.label}
 						</NavLink>
@@ -50,24 +68,43 @@ const Navbar = () => {
 				<div className="hidden items-center gap-3 md:flex">
 					{isAuthenticated ? (
 						<>
-							<div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
-								<img
-									src={user?.avatar}
-									alt={user?.name || "User"}
-									className="h-8 w-8 rounded-full border border-slate-200"
-								/>
-								<span className="text-sm font-medium text-slate-700">
-									{user?.name || "Learner"}
-								</span>
+							<div className="relative">
+								<button
+									type="button"
+									onClick={() => setProfileOpen((prev) => !prev)}
+									className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700"
+								>
+									<UserCircle2 className="h-5 w-5 text-indigo-600" />
+									<span>{user?.name || "User"}</span>
+									<ChevronDown className="h-4 w-4" />
+								</button>
+
+								<AnimatePresence>
+									{profileOpen && (
+										<motion.div
+											initial={{ opacity: 0, y: -6 }}
+											animate={{ opacity: 1, y: 0 }}
+											exit={{ opacity: 0, y: -6 }}
+											className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+										>
+											<Link
+												to="/dashboard"
+												onClick={() => setProfileOpen(false)}
+												className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+											>
+												Profile
+											</Link>
+											<button
+												type="button"
+												onClick={handleLogout}
+												className="mt-1 inline-flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+											>
+												<LogOut size={16} /> Logout
+											</button>
+										</motion.div>
+									)}
+								</AnimatePresence>
 							</div>
-							<button
-								type="button"
-								onClick={handleLogout}
-								className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-							>
-								<LogOut size={16} />
-								Logout
-							</button>
 						</>
 					) : (
 						<>
@@ -106,7 +143,7 @@ const Navbar = () => {
 						className="glass mx-auto mt-2 w-full max-w-7xl rounded-2xl p-3 md:hidden"
 					>
 						<div className="flex flex-col gap-1">
-							{baseLinks.map((item) => (
+							{currentLinks.map((item) => (
 								<NavLink
 									key={item.label}
 									to={item.to}
@@ -122,8 +159,8 @@ const Navbar = () => {
 							{isAuthenticated ? (
 								<button
 									type="button"
-									onClick={() => {
-										handleLogout();
+									onClick={async () => {
+										await handleLogout();
 										setOpen(false);
 									}}
 									className="w-full rounded-lg border border-slate-200 px-4 py-2 text-left text-sm font-medium text-slate-700"
