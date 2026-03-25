@@ -8,7 +8,7 @@ import CreateChannelModal from '../../components/community/CreateChannelModal';
 
 const Community = () => {
   const { user } = useContext(AuthContext);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
 
   const [channels, setChannels] = useState([]);
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -269,7 +269,10 @@ const Community = () => {
       {showCreateChannel && (
         <CreateChannelModal
           onClose={() => setShowCreateChannel(false)}
-          onCreated={(ch) => setChannels((prev) => [ch, ...prev])}
+          onCreated={(ch) => {
+            setChannels((prev) => [ch, ...prev]);
+            setSelectedChannel(ch);
+          }}
         />
       )}
     </div>
