@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import HomePage from "./pages/HomePage";
 import Materials from "./pages/materials/Materials";
@@ -170,6 +170,31 @@ const CommunityPage = () => (
   />
 );
 
+const CoursesPage = () => (
+  <PageShell
+    title="Cources"
+    description="Browse your available learning paths and continue from where you left off."
+  />
+);
+
+const QuizesPage = () => (
+  <PageShell
+    title="Quizes"
+    description="Attempt quizzes, review your scores, and track your progress."
+  />
+);
+
+const QuizAttemptPage = () => {
+  const { id } = useParams();
+
+  return (
+    <PageShell
+      title={`Quizes - Quiz ${id}`}
+      description="Attempt quizzes, review your scores, and track your progress."
+    />
+  );
+};
+
 const NotificationsPage = () => (
   <PageShell
     title="Notifications"
@@ -191,13 +216,31 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/courses"
+        element={
+          <ProtectedRoute>
+            <CoursesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quiz/:id/quits"
+        element={
+          <ProtectedRoute>
+            <QuizAttemptPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/quizes" element={<Navigate to="/quiz/1/quits" replace />} />
+      <Route path="/quizzes" element={<Navigate to="/quiz/1/quits" replace />} />
       <Route path="/community" element={<CommunityPage />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route
         path="/materials"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <Materials />
           </ProtectedRoute>
         }
       />
