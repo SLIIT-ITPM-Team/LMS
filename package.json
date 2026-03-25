@@ -1,0 +1,27 @@
+{
+  "name": "eduflow-lms",
+  "version": "1.0.0",
+  "description": "EduFlow LMS - Modern Learning Management System with MERN Stack",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "keywords": [
+    "LMS",
+    "learning-management",
+    "MERN",
+    "React",
+    "Node.js"
+  ],
+  "author": "EduFlow Team",
+  "license": "MIT"
+}
