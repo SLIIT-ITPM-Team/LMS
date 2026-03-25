@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } fr
 import { motion } from "framer-motion";
 import HomePage from "./pages/HomePage";
 import Materials from "./pages/materials/Materials";
+import Community from "./pages/community/Community";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import useAuth from "./hooks/useAuth";
 
@@ -234,7 +235,14 @@ const AppRoutes = () => {
       />
       <Route path="/quizes" element={<Navigate to="/quiz/1/quits" replace />} />
       <Route path="/quizzes" element={<Navigate to="/quiz/1/quits" replace />} />
-      <Route path="/community" element={<CommunityPage />} />
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute>
+            <Community />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route
         path="/materials"
