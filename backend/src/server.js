@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection
-const URL = process.env.MONGODB_URL;
+const URL = process.env.MONGODB_URI;
 mongoose.connect(URL).catch((error) => {
     console.error('MongoDB initial connection failed:', error.message);
 });

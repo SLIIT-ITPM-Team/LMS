@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../utils/asyncHandler');
 const User = require('../models/User');
 
-const protect = asyncHandler(async (req, res, next) => {
+const verifyToken = asyncHandler(async (req, res, next) => {
     let token;
 
     if (
@@ -33,4 +33,24 @@ const protect = asyncHandler(async (req, res, next) => {
     }
 });
 
-module.exports = { protect };
+// Middleware to check if user is admin
+const isAdmin = asyncHandler(async (req, res, next) => {
+    if (!req.user) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    if (!user || user.role !== 'admin') {
+        res.status(403);
+        throw new Error('Not authorized as admin');
+    }
+
+    next();
+});
+
+// Keep protect as alias for backward compatibility
+const protect = verifyToken;
+
+module.exports = { protect, verifyToken, isAdmin };
