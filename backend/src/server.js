@@ -9,6 +9,8 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const User = require('./models/User');
+const Channel = require('./models/Channel');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
@@ -34,11 +36,54 @@ mongoose.connect(URL).catch((error) => {
 
 const connection = mongoose.connection;
 connection.once('open', () => {
-    console.log("MongoDB connection success!");
+  console.log("MongoDB connection success!");
+  ensureDefaultAdmin()
+    .then((admin) => ensureDefaultChannels(admin))
+    .catch((err) => console.error('Default seed failed:', err.message));
 });
 connection.on('error', (error) => {
     console.error('MongoDB connection error:', error.message);
 });
+
+// Ensure a default admin exists (idempotent)
+async function ensureDefaultAdmin() {
+  const email = process.env.DEFAULT_ADMIN_EMAIL || 'admin@gmail.com';
+  const password = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@123';
+  const name = process.env.DEFAULT_ADMIN_NAME || 'admin';
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    if (existing.role !== 'admin') {
+      existing.role = 'admin';
+      await existing.save();
+      console.log(`Default admin elevated: ${email}`);
+    }
+    return existing;
+  }
+
+  const created = await User.create({ name, email, password, role: 'admin' });
+  console.log(`Default admin created: ${email}`);
+  return created;
+}
+
+async function ensureDefaultChannels(adminUser) {
+  if (!adminUser) return;
+  const defaults = [
+    { name: 'ITPM', subject: 'IT Project Management', description: 'Projects, PMBOK, Agile, tools', expert: { name: 'Dr. Silva' } },
+    { name: 'PAF', subject: 'Physical and Applied Finance', description: 'Markets, risk, valuation', expert: { name: 'Prof. Kumar' } },
+    { name: 'NDM', subject: 'Network & Data Management', description: 'Networks, security, ops', expert: { name: 'Eng. Perera' } },
+  ];
+
+  for (const ch of defaults) {
+    const exists = await Channel.findOne({ name: ch.name, isActive: true });
+    if (exists) continue;
+    await Channel.create({
+      ...ch,
+      createdBy: adminUser._id,
+    });
+    console.log(`Seeded channel: ${ch.name}`);
+  }
+}
 
 // Routes
 const quizRouter = require('./routes/quiz.routes.js');
