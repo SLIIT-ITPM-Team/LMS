@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
-const baseLinks = [
+const guestLinks = [
 	{ to: "/", label: "Home" },
 	{ to: "/courses", label: "Courses" },
 	{ to: "/quizzes", label: "Quizzes" },
@@ -19,22 +19,29 @@ const baseLinks = [
 	{ to: "/community", label: "Community" },
 ];
 
+const studentLinks = [
+	{ to: "/dashboard", label: "Dashboard" },
+	{ to: "/courses/1", label: "My Courses" },
+	{ to: "/quiz/1", label: "Quizzes" },
+	{ to: "/community", label: "Community" },
+	{ to: "/certificates", label: "Certificates" },
+];
+
+const adminLinks = [
+	{ to: "/admin", label: "Dashboard" },
+	{ to: "/admin/users", label: "Users" },
+	{ to: "/admin/modules", label: "Modules" },
+	{ to: "/admin/departments", label: "Departments" },
+	{ to: "/admin/reports", label: "Reports" },
+];
+
 const Navbar = () => {
 	const [open, setOpen] = useState(false);
-	const { isAuthenticated, user, logout } = useAuth();
+	const [profileOpen, setProfileOpen] = useState(false);
+	const { isAuthenticated, user, logout, isAdmin } = useAuth();
 	const navigate = useNavigate();
 
-	const displayName = user?.name || "Dilshi";
-	const initials = useMemo(
-		() =>
-			displayName
-				.split(" ")
-				.map((part) => part[0])
-				.join("")
-				.slice(0, 2)
-				.toUpperCase(),
-		[displayName],
-	);
+	const currentLinks = isAuthenticated ? (isAdmin ? adminLinks : studentLinks) : guestLinks;
 
 	const navLinkClass = ({ isActive }) =>
 		`rounded-full px-3.5 py-2 text-sm font-semibold transition ${
@@ -43,9 +50,9 @@ const Navbar = () => {
 				: "text-slate-700 hover:bg-white/60 hover:text-slate-900"
 		}`;
 
-	const handleLogout = () => {
-		logout();
-		navigate("/");
+	const handleLogout = async () => {
+		await logout();
+		navigate("/", { replace: true });
 	};
 
 	return (
@@ -59,7 +66,7 @@ const Navbar = () => {
 				</Link>
 
 				<div className="hidden items-center gap-1 md:flex">
-					{baseLinks.map((item) => (
+					{currentLinks.map((item) => (
 						<NavLink key={item.label} to={item.to} className={navLinkClass}>
 							{item.label}
 						</NavLink>
@@ -159,8 +166,8 @@ const Navbar = () => {
 							{isAuthenticated ? (
 								<button
 									type="button"
-									onClick={() => {
-										handleLogout();
+									onClick={async () => {
+										await handleLogout();
 										setOpen(false);
 									}}
 									className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200"
