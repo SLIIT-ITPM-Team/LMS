@@ -6,8 +6,10 @@ import useAuth from "../../hooks/useAuth";
 
 const baseLinks = [
 	{ to: "/", label: "Home" },
+	{ to: "/courses", label: "Cources" },
+	{ to: "/add-summary", label: "Quizes" },
+	{ to: "/materials", label: "Materials" },
 	{ to: "/community", label: "Community" },
-	{ to: "/notifications", label: "Notifications" },
 ];
 
 const Navbar = () => {
@@ -43,11 +45,6 @@ const Navbar = () => {
 							{item.label}
 						</NavLink>
 					))}
-					{isAuthenticated && (
-						<NavLink to="/dashboard" className={navLinkClass}>
-							Dashboard
-						</NavLink>
-					)}
 				</div>
 
 				<div className="hidden items-center gap-3 md:flex">
@@ -119,15 +116,6 @@ const Navbar = () => {
 									{item.label}
 								</NavLink>
 							))}
-							{isAuthenticated && (
-								<NavLink
-									to="/dashboard"
-									className={navLinkClass}
-									onClick={() => setOpen(false)}
-								>
-									Dashboard
-								</NavLink>
-							)}
 						</div>
 
 						<div className="mt-3 border-t border-white/60 pt-3">
