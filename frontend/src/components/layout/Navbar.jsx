@@ -105,26 +105,43 @@ const Navbar = () => {
 					>
 						<Bell size={18} />
 					</button>
-					<div className="flex items-center gap-3 rounded-full border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur">
-						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
-							{initials}
-						</span>
-						<div className="leading-tight">
-							<p className="text-sm font-semibold text-slate-900">
-								{displayName}
-							</p>
-							<p className="text-xs text-slate-500">Learner</p>
+					{isAuthenticated ? (
+						<>
+							<div className="flex items-center gap-3 rounded-full border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur">
+								<span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+									{initials}
+								</span>
+								<div className="leading-tight">
+									<p className="text-sm font-semibold text-slate-900">
+										{displayName}
+									</p>
+									<p className="text-xs text-slate-500">Learner</p>
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={handleLogout}
+								className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+								aria-label="Logout"
+							>
+								<LogOut size={18} />
+							</button>
+						</>
+					) : (
+						<div className="flex gap-2">
+							<Link
+								to="/login"
+								className="rounded-xl border border-white/70 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white/90"
+							>
+								Login
+							</Link>
+							<Link
+								to="/register"
+								className="rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:shadow-lg"
+							>
+								Register
+							</Link>
 						</div>
-					</div>
-					{isAuthenticated && (
-						<button
-							type="button"
-							onClick={handleLogout}
-							className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-							aria-label="Logout"
-						>
-							<LogOut size={18} />
-						</button>
 					)}
 				</div>
 

@@ -5,7 +5,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
@@ -14,24 +13,9 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
 const DEFAULT_PORT = Number(process.env.PORT) || 8070;
 
-const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:5173,http://127.0.0.1:5173')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-const corsOptions = {
-    origin(origin, callback) {
-        // Allow non-browser clients or same-origin requests with no Origin header.
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true,
-};
+// Import our custom CORS middleware
+const createCorsMiddleware = require('./middlewares/cors.middleware');
+const healthRouter = require('./routes/health.routes');
 
 // Ensure uploads directories exist
 const fs = require('fs');
@@ -39,8 +23,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use(createCorsMiddleware());
 app.use(helmet());
 app.use(bodyParser.json());
 app.use(express.json({ limit: '1mb' }));
@@ -77,6 +60,9 @@ connection.on('error', (error) => {
 const quizRouter = require('./routes/quiz.routes.js');
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
+
+// Health check endpoint first
+app.use('/api/health', healthRouter);
 
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/admin', adminRouter);
