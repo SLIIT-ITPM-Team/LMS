@@ -24,6 +24,7 @@ const studentLinks = [
 	{ to: "/courses/1", label: "My Courses" },
 	{ to: "/quiz/1", label: "Quizzes" },
 	{ to: "/community", label: "Community" },
+    { to: "/materials", label: "Materials" },
 	{ to: "/certificates", label: "Certificates" },
 ];
 
@@ -40,6 +41,21 @@ const Navbar = () => {
 	const [profileOpen, setProfileOpen] = useState(false);
 	const { isAuthenticated, user, logout, isAdmin } = useAuth();
 	const navigate = useNavigate();
+
+	// Generate user initials and display name
+	const initials = useMemo(() => {
+		if (!user?.name) return "U";
+		const names = user.name.split(" ");
+		if (names.length >= 2) {
+			return names[0][0].toUpperCase() + names[names.length - 1][0].toUpperCase();
+		}
+		return names[0][0].toUpperCase();
+	}, [user?.name]);
+
+	const displayName = useMemo(() => {
+		if (!user?.name) return "User";
+		return user.name;
+	}, [user?.name]);
 
 	const currentLinks = isAuthenticated ? (isAdmin ? adminLinks : studentLinks) : guestLinks;
 
@@ -131,7 +147,7 @@ const Navbar = () => {
 						className="mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/60 bg-white/80 p-4 shadow-lg backdrop-blur md:hidden"
 					>
 						<div className="flex flex-col gap-2">
-							{baseLinks.map((item) => (
+							{currentLinks.map((item) => (
 								<NavLink
 									key={item.label}
 									to={item.to}
