@@ -1,13 +1,20 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, LogOut } from "lucide-react";
+import {
+	Bell,
+	LogOut,
+	Menu,
+	Search,
+	UserRound,
+	X,
+} from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
 const baseLinks = [
 	{ to: "/", label: "Home" },
-	{ to: "/courses", label: "Cources" },
-	{ to: "/add-summary", label: "Quizes" },
+	{ to: "/courses", label: "Courses" },
+	{ to: "/quizzes", label: "Quizzes" },
 	{ to: "/materials", label: "Materials" },
 	{ to: "/community", label: "Community" },
 ];
@@ -17,11 +24,23 @@ const Navbar = () => {
 	const { isAuthenticated, user, logout } = useAuth();
 	const navigate = useNavigate();
 
+	const displayName = user?.name || "Dilshi";
+	const initials = useMemo(
+		() =>
+			displayName
+				.split(" ")
+				.map((part) => part[0])
+				.join("")
+				.slice(0, 2)
+				.toUpperCase(),
+		[displayName],
+	);
+
 	const navLinkClass = ({ isActive }) =>
-		`rounded-lg px-3 py-2 text-sm font-medium transition ${
+		`rounded-full px-3.5 py-2 text-sm font-semibold transition ${
 			isActive
-				? "bg-indigo-100 text-primary"
-				: "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+				? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white shadow-lg shadow-indigo-200"
+				: "text-slate-700 hover:bg-white/60 hover:text-slate-900"
 		}`;
 
 	const handleLogout = () => {
@@ -30,10 +49,10 @@ const Navbar = () => {
 	};
 
 	return (
-		<header className="fixed top-0 z-50 w-full px-4 py-3 md:px-8">
-			<nav className="glass mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl px-4 py-3 shadow-lg">
+		<header className="fixed top-0 z-50 w-full px-4 py-3 md:px-6">
+			<nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-xl backdrop-blur-xl">
 				<Link to="/" className="flex items-center gap-2">
-					<span className="rounded-lg bg-primary px-2 py-1 text-xs font-bold text-white">
+					<span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-xs font-extrabold text-white shadow-lg shadow-indigo-200">
 						EF
 					</span>
 					<span className="text-lg font-bold text-slate-900">EduFlow</span>
@@ -47,50 +66,49 @@ const Navbar = () => {
 					))}
 				</div>
 
-				<div className="hidden items-center gap-3 md:flex">
-					{isAuthenticated ? (
-						<>
-							<div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
-								<img
-									src={user?.avatar}
-									alt={user?.name || "User"}
-									className="h-8 w-8 rounded-full border border-slate-200"
-								/>
-								<span className="text-sm font-medium text-slate-700">
-									{user?.name || "Learner"}
-								</span>
-							</div>
-							<button
-								type="button"
-								onClick={handleLogout}
-								className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-							>
-								<LogOut size={16} />
-								Logout
-							</button>
-						</>
-					) : (
-						<>
-							<Link
-								to="/login"
-								className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-							>
-								Login
-							</Link>
-							<Link
-								to="/register"
-								className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-							>
-								Register
-							</Link>
-						</>
+				<div className="hidden items-center gap-2 md:flex">
+					<div className="flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 shadow-inner backdrop-blur">
+						<Search size={16} className="text-slate-500" />
+						<input
+							type="text"
+							placeholder="Search"
+							className="w-32 bg-transparent text-sm outline-none placeholder:text-slate-400"
+						/>
+					</div>
+					<button
+						type="button"
+						className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+						aria-label="Notifications"
+					>
+						<Bell size={18} />
+					</button>
+					<div className="flex items-center gap-3 rounded-full border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur">
+						<span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+							{initials}
+						</span>
+						<div className="leading-tight">
+							<p className="text-sm font-semibold text-slate-900">
+								{displayName}
+							</p>
+							<p className="text-xs text-slate-500">Learner</p>
+						</div>
+					</div>
+					{isAuthenticated && (
+						<button
+							type="button"
+							onClick={handleLogout}
+							className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+							aria-label="Logout"
+						>
+							<LogOut size={18} />
+						</button>
 					)}
 				</div>
 
 				<button
 					type="button"
 					onClick={() => setOpen((prev) => !prev)}
-					className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
+					className="rounded-xl border border-white/70 bg-white/70 p-2 text-slate-700 shadow-sm backdrop-blur md:hidden"
 					aria-label="Toggle menu"
 				>
 					{open ? <X size={20} /> : <Menu size={20} />}
@@ -103,9 +121,9 @@ const Navbar = () => {
 						initial={{ opacity: 0, y: -8 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -8 }}
-						className="glass mx-auto mt-2 w-full max-w-7xl rounded-2xl p-3 md:hidden"
+						className="mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/60 bg-white/80 p-4 shadow-lg backdrop-blur md:hidden"
 					>
-						<div className="flex flex-col gap-1">
+						<div className="flex flex-col gap-2">
 							{baseLinks.map((item) => (
 								<NavLink
 									key={item.label}
@@ -118,7 +136,26 @@ const Navbar = () => {
 							))}
 						</div>
 
-						<div className="mt-3 border-t border-white/60 pt-3">
+						<div className="mt-3 space-y-3 border-t border-white/70 pt-3">
+							<div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 shadow-inner">
+								<Search size={16} className="text-slate-500" />
+								<input
+									type="text"
+									placeholder="Search"
+									className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+								/>
+							</div>
+							<div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/70 px-3 py-2 shadow-sm">
+								<span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+									{initials}
+								</span>
+								<div className="leading-tight">
+									<p className="text-sm font-semibold text-slate-900">
+										{displayName}
+									</p>
+									<p className="text-xs text-slate-500">Learner</p>
+								</div>
+							</div>
 							{isAuthenticated ? (
 								<button
 									type="button"
@@ -126,8 +163,9 @@ const Navbar = () => {
 										handleLogout();
 										setOpen(false);
 									}}
-									className="w-full rounded-lg border border-slate-200 px-4 py-2 text-left text-sm font-medium text-slate-700"
+									className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200"
 								>
+									<LogOut size={16} />
 									Logout
 								</button>
 							) : (
@@ -135,14 +173,14 @@ const Navbar = () => {
 									<Link
 										to="/login"
 										onClick={() => setOpen(false)}
-										className="w-full rounded-lg border border-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700"
+										className="w-full rounded-xl border border-white/70 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-700"
 									>
 										Login
 									</Link>
 									<Link
 										to="/register"
 										onClick={() => setOpen(false)}
-										className="w-full rounded-lg bg-primary px-4 py-2 text-center text-sm font-semibold text-white"
+										className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-center text-sm font-semibold text-white shadow-md shadow-indigo-200"
 									>
 										Register
 									</Link>
