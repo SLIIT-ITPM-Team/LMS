@@ -93,8 +93,15 @@ async function ensureDefaultChannels(adminUser) {
   ];
 
   for (const ch of defaults) {
-    const exists = await Channel.findOne({ name: ch.name, isActive: true });
-    if (exists) continue;
+    const exists = await Channel.findOne({ name: ch.name });
+    if (exists) {
+      if (!exists.isActive) {
+        exists.isActive = true;
+        await exists.save();
+        console.log(`Reactivated channel: ${ch.name}`);
+      }
+      continue;
+    }
     await Channel.create({
       ...ch,
       createdBy: adminUser._id,
