@@ -20,7 +20,6 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
 const stats = [
@@ -119,7 +118,7 @@ const testimonials = [
       "EduFlow feels like a complete learning operating system, from courses to certificates to community.",
   },
   {
-    name: "Kavindi Fernando",
+    name: "Amaya Fernando",
     department: "Information Technology",
     quote:
       "The summaries and notification flow kept me consistent. I could revise quickly before every quiz.",
@@ -140,7 +139,6 @@ const cardContainer = {
   show: {
     transition: {
       staggerChildren: 0.12,
-      delayChildren: 0.1,
     },
   },
 };
@@ -200,15 +198,14 @@ const HomePage = () => {
   }
 
   return (
-    <motion.div
-      className="overflow-x-hidden text-slate-900"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.45 }}
-    >
-      <Navbar />
-
-      <main>
+    <>
+      <motion.div
+        className="overflow-x-hidden text-slate-900"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.45 }}
+      >
+        <main>
         <section className="relative isolate overflow-hidden border-b border-indigo-100 pt-28 pb-16 md:pt-36 md:pb-24">
           <div className="absolute inset-0 -z-20 bg-hero-mesh" />
           <motion.div
@@ -490,10 +487,10 @@ const HomePage = () => {
             </motion.section>
           </div>
         </Reveal>
-      </main>
-
+        </main>
+      </motion.div>
       <Footer />
-    </motion.div>
+    </>
   );
 };
 

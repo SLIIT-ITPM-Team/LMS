@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import * as authApi from "../api/auth.api";
 
 export const AuthContext = createContext(null);
 
@@ -11,6 +12,26 @@ export const AuthProvider = ({ children }) => {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		const bootstrap = async () => {
+			const token = localStorage.getItem(TOKEN_KEY);
+			if (!token) {
+				setLoading(false);
+				return;
+			}
+
+			try {
+				const { user: profile } = await authApi.getMe();
+				localStorage.setItem(USER_KEY, JSON.stringify(profile));
+				setUser(profile);
+			} catch {
+				localStorage.removeItem(USER_KEY);
+				localStorage.removeItem(TOKEN_KEY);
+				setUser(null);
+			} finally {
+				setLoading(false);
+			}
+		};
+
 		try {
 			const raw = localStorage.getItem(USER_KEY);
 			if (raw) {
@@ -24,11 +45,12 @@ export const AuthProvider = ({ children }) => {
 		} catch (error) {
 			console.error("Failed to parse persisted auth user", error);
 			localStorage.removeItem(USER_KEY);
-		} finally {
-			setLoading(false);
 		}
+
+		bootstrap();
 	}, []);
 
+<<<<<<< HEAD
 	const login = (payload) => {
 		const email = payload?.email || "learner@eduflow.app";
 		const isAdminEmail = email.toLowerCase() === DEFAULT_ADMIN_EMAIL;
@@ -50,12 +72,31 @@ export const AuthProvider = ({ children }) => {
 		localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
 		localStorage.setItem(TOKEN_KEY, token);
 		setUser(safeUser);
+=======
+	const login = async (credentials) => {
+		const data = await authApi.login(credentials);
+		localStorage.setItem(TOKEN_KEY, data.token);
+		localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+		setUser(data.user);
+		return data;
+>>>>>>> Development
 	};
 
-	const logout = () => {
+	const logout = async () => {
+		try {
+			await authApi.logout();
+		} catch {
+			// Client-side cleanup is sufficient even if request fails.
+		}
+
 		localStorage.removeItem(USER_KEY);
 		localStorage.removeItem(TOKEN_KEY);
 		setUser(null);
+	};
+
+	const updateUser = (nextUser) => {
+		localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+		setUser(nextUser);
 	};
 
 	const value = useMemo(
@@ -63,8 +104,11 @@ export const AuthProvider = ({ children }) => {
 			user,
 			loading,
 			isAuthenticated: Boolean(user),
+			isAdmin: user?.role === "admin",
+			hasRole: (role) => user?.role === role,
 			login,
 			logout,
+			updateUser,
 		}),
 		[user, loading]
 	);
