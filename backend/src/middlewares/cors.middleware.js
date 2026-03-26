@@ -5,6 +5,8 @@ const cors = require('cors');
  * Provides flexible CORS handling for development and production environments
  */
 const createCorsMiddleware = () => {
+  const allowAllOrigins = String(process.env.ALLOW_ALL_ORIGINS || '').toLowerCase() === 'true';
+
   // Parse allowed origins from environment variables
   const parseAllowedOrigins = () => {
     const envOrigins = process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '';
@@ -39,8 +41,20 @@ const createCorsMiddleware = () => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
+      // Explicit override to allow any client origin.
+      // Keep credentials enabled by reflecting request origin instead of '*'.
+      if (allowAllOrigins) {
+        return callback(null, true);
+      }
+
       // In development, allow all origins for easier testing
       if (process.env.NODE_ENV === 'development') {
+        // Also accept LAN hosts like 192.168.x.x and 10.x.x.x used from other PCs.
+        const isLanOrigin = /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(origin);
+        if (isLanOrigin) {
+          return callback(null, true);
+        }
+
         console.log(`CORS: Allowing origin (development): ${origin}`);
         return callback(null, true);
       }
