@@ -71,7 +71,10 @@ app.use('/api/quiz', quizRouter);
 app.use('/quiz', quizRouter);
 
 app.use((err, req, res, next) => {
-    const status = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+    const status =
+        err.status ||
+        err.statusCode ||
+        (res.statusCode && res.statusCode !== 200 ? res.statusCode : 500);
     res.status(status).json({
         message: err.message || 'Server error',
         stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
