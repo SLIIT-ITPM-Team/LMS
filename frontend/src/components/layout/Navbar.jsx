@@ -22,7 +22,7 @@ const guestLinks = [
 const studentLinks = [
 	{ to: "/dashboard", label: "Dashboard" },
 	{ to: "/courses/1", label: "My Courses" },
-	{ to: "/quiz/1", label: "Quizzes" },
+	{ to: "/quizzes", label: "Quizzes" },
 	{ to: "/community", label: "Community" },
     { to: "/materials", label: "Materials" },
 	{ to: "/certificates", label: "Certificates" },
