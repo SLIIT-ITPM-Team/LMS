@@ -42,7 +42,15 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/quiz/:id"
+        path="/quizzes"
+        element={
+          <ProtectedRoute roles={["student", "admin"]}>
+            <QuizPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quiz/:id/quits"
         element={
           <ProtectedRoute roles={["student", "admin"]}>
             <QuizPage />
