@@ -1,27 +1,38 @@
 {
-  "name": "eduflow-lms",
+  "name": "lms-root",
   "version": "1.0.0",
-  "description": "EduFlow LMS - Modern Learning Management System with MERN Stack",
+  "description": "Learning Management System - MERN Stack",
   "private": true,
   "scripts": {
-    "dev": "cd frontend && npm run dev",
-    "build": "npm run build:frontend && npm run build:backend",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build",
-    "preview": "cd frontend && npm run preview",
-    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "setup": "npm run install:all && echo 'Setup complete! Run npm run dev to start both servers.'",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "backend:install": "cd backend && npm install",
+    "frontend:install": "cd frontend && npm install",
+    "backend:start": "cd backend && npm start",
+    "frontend:start": "cd frontend && npm run dev",
+    "dev:check": "node scripts/dev.js",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules package-lock.json backend/package-lock.json frontend/package-lock.json",
+    "reset": "npm run clean && npm run install:all"
   },
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "keywords": [
-    "LMS",
-    "learning-management",
-    "MERN",
-    "React",
-    "Node.js"
+    "lms",
+    "learning-management-system",
+    "mern",
+    "react",
+    "express",
+    "mongodb",
+    "vite"
   ],
-  "author": "EduFlow Team",
-  "license": "MIT"
+  "author": "LMS Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
 }
