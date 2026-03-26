@@ -15,7 +15,7 @@ const Channel = require('./models/Channel');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-const DEFAULT_PORT = Number(process.env.PORT) || 8070;
+const DEFAULT_PORT = Number(process.env.PORT) || 5001;
 
 // Import our custom CORS middleware
 const createCorsMiddleware = require('./middlewares/cors.middleware');
