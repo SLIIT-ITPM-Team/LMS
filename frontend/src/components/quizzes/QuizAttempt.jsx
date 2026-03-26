@@ -1,28 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
 import theme from '../theme';
-
-const LOCAL_BACKEND_PORTS = [8070, 8071, 8072, 8073, 8074, 8075];
-
-const createBackendUrl = (port, path) => `http://localhost:${port}${path}`;
-
-async function postWithBackendFallback(path, payload) {
-  let lastNetworkError = null;
-
-  for (const port of LOCAL_BACKEND_PORTS) {
-    try {
-      return await axios.post(createBackendUrl(port, path), payload, { timeout: 5000 });
-    } catch (err) {
-      if (err.response) {
-        throw err;
-      }
-      lastNetworkError = err;
-    }
-  }
-
-  throw lastNetworkError || new Error('Backend not reachable');
-}
 
 const AddSummary = () => {
   const navigate = useNavigate();
@@ -39,7 +18,7 @@ const AddSummary = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await postWithBackendFallback('/quiz/from-summary', {
+      const response = await api.post('/api/quiz/from-summary', {
         summary: summary.trim(),
       });
       navigate(`/quiz/${response.data._id}/quits`);
