@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 import React, { useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -204,6 +205,8 @@ const NotificationsPage = () => (
   />
 );
 =======
+=======
+>>>>>>> Stashed changes
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
@@ -222,7 +225,10 @@ import ModuleManagement from './pages/admin/ModuleManagement';
 import DepartmentManagement from './pages/admin/DepartmentManagement';
 import Reports from './pages/admin/Reports';
 import ProtectedRoute from './components/layout/ProtectedRoute';
+<<<<<<< Updated upstream
 >>>>>>> Development
+=======
+>>>>>>> Stashed changes
 
 const AppRoutes = () => {
   return (
@@ -253,6 +259,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute roles={["student", "admin"]}>
             <QuizPage />
+<<<<<<< Updated upstream
           </ProtectedRoute>
         }
       />
@@ -278,6 +285,19 @@ const AppRoutes = () => {
       <Route path="/notifications" element={<NotificationsPage />} />
 =======
 >>>>>>> Development
+=======
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute roles={["student", "admin"]}>
+            <Community />
+          </ProtectedRoute>
+        }
+      />
+>>>>>>> Stashed changes
       <Route
         path="/materials"
         element={

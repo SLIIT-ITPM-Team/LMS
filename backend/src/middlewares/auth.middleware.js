@@ -33,6 +33,11 @@ const protect = asyncHandler(async (req, res, next) => {
                 throw new Error('Not authorized, user does not exist or is inactive');
             }
 
+            if (!req.user || !req.user.isActive) {
+                res.status(401);
+                throw new Error('Not authorized, user does not exist or is inactive');
+            }
+
             next();
 >>>>>>> Development
         } catch (error) {

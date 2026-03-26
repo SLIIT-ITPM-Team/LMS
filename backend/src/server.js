@@ -8,10 +8,13 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+<<<<<<< Updated upstream
 const http = require('http');
 const { Server } = require('socket.io');
 const User = require('./models/User');
 const Channel = require('./models/Channel');
+=======
+>>>>>>> Stashed changes
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
@@ -43,12 +46,15 @@ const authLimiter = rateLimit({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 const URL = process.env.MONGODB_URI || process.env.MONGODB_URL;
 mongoose.connect(URL).catch((error) => {
     console.error('MongoDB initial connection failed:', error.message);
 });
 =======
+=======
+>>>>>>> Stashed changes
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL;
 if (!mongoUri) {
     console.error('MongoDB initial connection failed: MONGODB_URI is not set in backend/.env');
@@ -57,7 +63,10 @@ if (!mongoUri) {
         console.error('MongoDB initial connection failed:', error.message);
     });
 }
+<<<<<<< Updated upstream
 >>>>>>> Development
+=======
+>>>>>>> Stashed changes
 
 const connection = mongoose.connection;
 connection.once('open', () => {
@@ -112,6 +121,7 @@ async function ensureDefaultChannels(adminUser) {
 
 // Routes
 const quizRouter = require('./routes/quiz.routes.js');
+<<<<<<< Updated upstream
 <<<<<<< HEAD
 const communityRoutes = require('./routes/community.routes.js');
 app.use('/quiz', quizRouter);
@@ -119,6 +129,8 @@ app.use('/quiz', quizRouter);
 // Global io instance
 let io;
 =======
+=======
+>>>>>>> Stashed changes
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
 
@@ -138,6 +150,7 @@ app.use((err, req, res, next) => {
         stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     });
 });
+<<<<<<< Updated upstream
 >>>>>>> Development
 
 // Start server
@@ -181,6 +194,12 @@ function startServer(port, retriesLeft = 5) {
     });
 
     server.listen(port, () => {
+=======
+
+// Start server
+function startServer(port, retriesLeft = 5) {
+    const server = app.listen(port, () => {
+>>>>>>> Stashed changes
         console.log(`Server is up and running on port number: ${port}`);
     });
 

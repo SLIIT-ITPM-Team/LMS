@@ -18,11 +18,15 @@
     "react-hot-toast": "^2.6.0",
     "react-intersection-observer": "^10.0.3",
     "react-router-dom": "^6.22.3",
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     "socket.io-client": "^4.7.2"
 =======
     "recharts": "^3.8.1"
 >>>>>>> Development
+=======
+    "recharts": "^3.8.1"
+>>>>>>> Stashed changes
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
