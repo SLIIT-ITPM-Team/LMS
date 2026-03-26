@@ -22,7 +22,7 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.from || "/";
+  const redirectTo = location.state?.from || "/dashboard";
 
   const handleSubmit = (event) => {
     event.preventDefault();
