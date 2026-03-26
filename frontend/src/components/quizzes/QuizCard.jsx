@@ -1,28 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
 import theme from '../theme';
-
-const LOCAL_BACKEND_PORTS = [8070, 8071, 8072, 8073, 8074, 8075];
-
-const createBackendUrl = (port, path) => `http://localhost:${port}${path}`;
-
-async function getWithBackendFallback(path) {
-  let lastNetworkError = null;
-
-  for (const port of LOCAL_BACKEND_PORTS) {
-    try {
-      return await axios.get(createBackendUrl(port, path), { timeout: 5000 });
-    } catch (err) {
-      if (err.response) {
-        throw err;
-      }
-      lastNetworkError = err;
-    }
-  }
-
-  throw lastNetworkError || new Error('Backend not reachable');
-}
 
 const Quits = () => {
   const { id } = useParams();
@@ -43,11 +22,15 @@ const Quits = () => {
       try {
         setLoading(true);
         setError('');
-        const res = await getWithBackendFallback(`/quiz/${id}/questions`);
+        const res = await api.get(`/api/quiz/${id}/questions`);
         setQuizName(res.data.name || 'Quiz');
         setQuestions((res.data.questions || []).slice(0, 10));
       } catch (err) {
-        setError('Failed to load quiz questions.');
+        if (err.request) {
+          setError('Cannot reach backend server. Please start backend and try again.');
+        } else {
+          setError('Failed to load quiz questions.');
+        }
       } finally {
         setLoading(false);
       }
