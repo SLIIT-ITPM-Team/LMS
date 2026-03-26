@@ -1,18 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "../api/auth.api";
 
-<<<<<<< Updated upstream
 export const AuthContext = createContext(null);
 
 const USER_KEY = "lms_user";
 const TOKEN_KEY = "lms_token";
-const DEFAULT_ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
-=======
-const AuthContext = createContext(null);
-
-const USER_KEY = "lms_user";
-const TOKEN_KEY = "lms_token";
->>>>>>> Stashed changes
+const DEFAULT_ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "admin@gmail.com").toLowerCase();
 
 export const AuthProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
@@ -42,17 +35,14 @@ export const AuthProvider = ({ children }) => {
 		try {
 			const raw = localStorage.getItem(USER_KEY);
 			if (raw) {
-<<<<<<< Updated upstream
-					const parsed = JSON.parse(raw);
-					const normalized = {
-						...parsed,
-						role: parsed?.role || (parsed?.email?.toLowerCase() === DEFAULT_ADMIN_EMAIL ? 'admin' : 'student'),
-					};
-					setUser(normalized);
-=======
 				const parsed = JSON.parse(raw);
-				setUser(parsed);
->>>>>>> Stashed changes
+				const normalized = {
+					...parsed,
+					role:
+						parsed?.role ||
+						(parsed?.email?.toLowerCase() === DEFAULT_ADMIN_EMAIL ? "admin" : "student"),
+				};
+				setUser(normalized);
 			}
 		} catch (error) {
 			console.error("Failed to parse persisted auth user", error);
@@ -62,42 +52,12 @@ export const AuthProvider = ({ children }) => {
 		bootstrap();
 	}, []);
 
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-	const login = (payload) => {
-		const email = payload?.email || "learner@eduflow.app";
-		const isAdminEmail = email.toLowerCase() === DEFAULT_ADMIN_EMAIL;
-		const role = payload?.role || (isAdminEmail ? "admin" : "student");
-
-		const safeUser = {
-			name: payload?.name || email.split("@")[0] || "Learner",
-			email,
-			role,
-			avatar:
-				payload?.avatar ||
-				`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-					payload?.name || "Learner"
-				)}`,
-		};
-
-		const token = payload?.token || `demo-token-${Date.now()}`;
-
-		localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-		localStorage.setItem(TOKEN_KEY, token);
-		setUser(safeUser);
-=======
-=======
->>>>>>> Stashed changes
 	const login = async (credentials) => {
 		const data = await authApi.login(credentials);
 		localStorage.setItem(TOKEN_KEY, data.token);
 		localStorage.setItem(USER_KEY, JSON.stringify(data.user));
 		setUser(data.user);
 		return data;
-<<<<<<< Updated upstream
->>>>>>> Development
-=======
->>>>>>> Stashed changes
 	};
 
 	const logout = async () => {

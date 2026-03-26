@@ -47,6 +47,9 @@ const AdminDashboard = () => {
             <Link to="/admin/departments" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
               Departments
             </Link>
+            <Link to="/admin/community" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
+              Community
+            </Link>
             <Link to="/admin/reports" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
               Reports
             </Link>

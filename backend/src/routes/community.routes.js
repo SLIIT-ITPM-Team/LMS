@@ -15,6 +15,7 @@ const adminOnly = (req, res, next) => {
 router.get('/channels', protect, ctrl.getChannels);
 router.get('/channels/:id', protect, ctrl.getChannel);
 router.post('/channels', protect, adminOnly, ctrl.createChannel);
+router.delete('/channels', protect, adminOnly, ctrl.deleteAllChannels);
 router.put('/channels/:id', protect, adminOnly, ctrl.updateChannel);
 router.delete('/channels/:id', protect, adminOnly, ctrl.deleteChannel);
 
@@ -23,6 +24,10 @@ router.get('/channels/:channelId/posts', protect, ctrl.getPostsByChannel);
 router.post('/posts', protect, ctrl.createPost);
 router.put('/posts/:id', protect, ctrl.updatePost);
 router.delete('/posts/:id', protect, ctrl.deletePost);
+
+// ── Discussions (Chat) ─────────────────────
+router.get('/channels/:channelId/discussions', protect, ctrl.getDiscussionMessages);
+router.post('/channels/:channelId/discussions', protect, ctrl.createDiscussionMessage);
 
 // ── Likes ─────────────────────────────────
 router.post('/posts/:id/like', protect, ctrl.toggleLike);

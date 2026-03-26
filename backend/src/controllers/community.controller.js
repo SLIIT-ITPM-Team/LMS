@@ -1,6 +1,25 @@
 const Channel = require('../models/Channel');
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
+const mongoose = require('mongoose');
+
+const ensureDiscussionRoot = async (channelId, userId) => {
+  let root = await Post.findOne({ channel: channelId, isDiscussionRoot: true, isDeleted: false });
+  if (root) return root;
+
+  root = await Post.create({
+    channel: channelId,
+    author: userId,
+    type: 'post',
+    title: 'Channel Discussion',
+    content: 'Discussion root',
+    isDiscussionRoot: true,
+  });
+
+  return root;
+};
 
 // ════════════════════════════════════════════
 //  CHANNELS
@@ -8,16 +27,46 @@ const Comment = require('../models/Comment');
 
 exports.createChannel = async (req, res) => {
   try {
-    const { name, subject, description, expertName, expertUserId } = req.body;
+    const {
+      name,
+      subject,
+      description,
+      expertName,
+      expertTitle,
+      expertPosition,
+      expertUserId,
+      topic,
+      icon,
+      coverImage,
+      subjectMatterExpertId,
+    } = req.body;
+
+    if (!name || !subject || !description) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    let smeUserId = expertUserId || subjectMatterExpertId || null;
+    if (smeUserId && !mongoose.Types.ObjectId.isValid(smeUserId)) {
+      return res.status(400).json({ success: false, message: 'Subject Matter Expert ID is invalid' });
+    }
+
     const channel = await Channel.create({
       name,
       subject,
       description,
-      expert: { name: expertName || '', userId: expertUserId || null },
+      topic: topic || '',
+      icon: icon || '',
+      coverImage: coverImage || '',
+      expert: {
+        name: expertName || '',
+        title: expertTitle || expertPosition || '',
+        userId: smeUserId || null,
+      },
+      subjectMatterExpert: smeUserId || null,
       createdBy: req.user._id,
     });
     const populated = await channel.populate('createdBy', 'name');
-    req.io.emit('channel:new', populated);
+    req.io?.emit('channel:new', populated);
     res.status(201).json({ success: true, data: populated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -47,9 +96,31 @@ exports.getChannel = async (req, res) => {
 
 exports.updateChannel = async (req, res) => {
   try {
-    const channel = await Channel.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('createdBy', 'name');
+    const updates = { ...req.body };
+    if (updates.subjectMatterExpertId || updates.expertUserId) {
+      const smeUserId = updates.subjectMatterExpertId || updates.expertUserId;
+      if (smeUserId && !mongoose.Types.ObjectId.isValid(smeUserId)) {
+        return res.status(400).json({ success: false, message: 'Subject Matter Expert ID is invalid' });
+      }
+      updates.subjectMatterExpert = smeUserId || null;
+      updates.expert = {
+        name: updates.expertName || '',
+        title: updates.expertTitle || updates.expertPosition || '',
+        userId: smeUserId || null,
+      };
+    }
+
+    if (updates.expertName || updates.expertTitle || updates.expertPosition) {
+      updates.expert = {
+        name: updates.expertName || updates.expert?.name || '',
+        title: updates.expertTitle || updates.expertPosition || updates.expert?.title || '',
+        userId: updates.expert?.userId || updates.subjectMatterExpert || null,
+      };
+    }
+
+    const channel = await Channel.findByIdAndUpdate(req.params.id, updates, { new: true }).populate('createdBy', 'name');
     if (!channel) return res.status(404).json({ success: false, message: 'Channel not found' });
-    req.io.emit('channel:updated', channel);
+    req.io?.emit('channel:updated', channel);
     res.json({ success: true, data: channel });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -61,6 +132,30 @@ exports.deleteChannel = async (req, res) => {
     await Channel.findByIdAndUpdate(req.params.id, { isActive: false });
     req.io.emit('channel:deleted', { id: req.params.id });
     res.json({ success: true, message: 'Channel deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteAllChannels = async (req, res) => {
+  try {
+    const channels = await Channel.find({});
+    const channelIds = channels.map((c) => c._id);
+
+    const posts = await Post.find({ channel: { $in: channelIds } }).select('_id');
+    const postIds = posts.map((p) => p._id);
+
+    await Comment.deleteMany({ post: { $in: postIds } });
+    await Notification.deleteMany({
+      $or: [
+        { relatedChannel: { $in: channelIds } },
+        { relatedPost: { $in: postIds } },
+      ],
+    });
+    await Post.deleteMany({ channel: { $in: channelIds } });
+    await Channel.deleteMany({ _id: { $in: channelIds } });
+
+    res.json({ success: true, message: 'All channels deleted' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -86,6 +181,27 @@ exports.createPost = async (req, res) => {
       title: title || '',
       content,
     });
+    
+    // Create notifications for all users if the post is an announcement
+    if (type === 'announcement' && isAdmin) {
+      const users = await User.find({}, '_id name');
+      const notifications = users
+        .filter((u) => u._id.toString() !== req.user._id.toString())
+        .map((u) => ({
+          recipient: u._id,
+          actor: req.user._id,
+          type: 'announcement_created',
+          title: 'New Announcement',
+          message: `${req.user.name || 'Admin'} posted: "${title || 'Announcement'}"`,
+          relatedPost: post._id,
+          relatedChannel: channelId,
+          actionUrl: `/community`,
+        }));
+
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    }
 
     const populated = await Post.findById(post._id).populate('author', 'name role avatar');
     req.io.to(channelId).emit('post:new', populated);
@@ -97,7 +213,11 @@ exports.createPost = async (req, res) => {
 
 exports.getPostsByChannel = async (req, res) => {
   try {
-    const posts = await Post.find({ channel: req.params.channelId, isDeleted: false })
+    const posts = await Post.find({
+      channel: req.params.channelId,
+      isDeleted: false,
+      isDiscussionRoot: { $ne: true },
+    })
       .populate('author', 'name role avatar')
       .sort('-createdAt');
     res.json({ success: true, data: posts });
@@ -241,6 +361,52 @@ exports.deleteComment = async (req, res) => {
     const post = await Post.findById(comment.post);
     req.io.to(post.channel.toString()).emit('comment:deleted', { id: req.params.id });
     res.json({ success: true, message: 'Comment deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ════════════════════════════════════════════
+//  DISCUSSION (CHAT)
+// ════════════════════════════════════════════
+
+exports.getDiscussionMessages = async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const root = await ensureDiscussionRoot(channelId, req.user._id);
+
+    const comments = await Comment.find({ post: root._id, isDeleted: false })
+      .populate('author', 'name role avatar')
+      .sort('createdAt');
+
+    res.json({ success: true, data: comments });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.createDiscussionMessage = async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ success: false, message: 'Message is required' });
+    }
+
+    const root = await ensureDiscussionRoot(channelId, req.user._id);
+
+    const comment = await Comment.create({
+      post: root._id,
+      author: req.user._id,
+      content: content.trim(),
+      parentComment: null,
+    });
+
+    const populated = await Comment.findById(comment._id).populate('author', 'name role avatar');
+    req.io?.to(channelId).emit('discussion:new', { channelId, message: populated });
+
+    res.status(201).json({ success: true, data: populated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

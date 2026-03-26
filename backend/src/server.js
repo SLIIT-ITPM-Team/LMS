@@ -8,13 +8,10 @@ const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-<<<<<<< Updated upstream
 const http = require('http');
 const { Server } = require('socket.io');
 const User = require('./models/User');
 const Channel = require('./models/Channel');
-=======
->>>>>>> Stashed changes
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
@@ -46,27 +43,14 @@ const authLimiter = rateLimit({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection
-<<<<<<< Updated upstream
-<<<<<<< HEAD
-const URL = process.env.MONGODB_URI || process.env.MONGODB_URL;
-mongoose.connect(URL).catch((error) => {
-    console.error('MongoDB initial connection failed:', error.message);
-});
-=======
-=======
->>>>>>> Stashed changes
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL;
 if (!mongoUri) {
-    console.error('MongoDB initial connection failed: MONGODB_URI is not set in backend/.env');
+  console.error('MongoDB initial connection failed: MONGODB_URI is not set in backend/.env');
 } else {
-    mongoose.connect(mongoUri).catch((error) => {
-        console.error('MongoDB initial connection failed:', error.message);
-    });
+  mongoose.connect(mongoUri).catch((error) => {
+    console.error('MongoDB initial connection failed:', error.message);
+  });
 }
-<<<<<<< Updated upstream
->>>>>>> Development
-=======
->>>>>>> Stashed changes
 
 const connection = mongoose.connection;
 connection.once('open', () => {
@@ -121,16 +105,11 @@ async function ensureDefaultChannels(adminUser) {
 
 // Routes
 const quizRouter = require('./routes/quiz.routes.js');
-<<<<<<< Updated upstream
-<<<<<<< HEAD
 const communityRoutes = require('./routes/community.routes.js');
-app.use('/quiz', quizRouter);
-
-// Global io instance
-let io;
-=======
-=======
->>>>>>> Stashed changes
+const postRoutes = require('./routes/post.routes.js');
+const commentRoutes = require('./routes/comment.routes.js');
+const notificationRoutes = require('./routes/notification.routes.js');
+const channelRoutes = require('./routes/channel.routes.js');
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
 
@@ -143,65 +122,67 @@ app.use('/api/admin', adminRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/quiz', quizRouter);
 
-app.use((err, req, res, next) => {
-    const status = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
-    res.status(status).json({
-        message: err.message || 'Server error',
-        stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
-    });
+// Global io instance
+let io;
+
+// Attach io to every request once it's available
+app.use((req, res, next) => {
+  if (io) {
+    req.io = io;
+  }
+  next();
 });
-<<<<<<< Updated upstream
->>>>>>> Development
+
+// Community routes (needs io attached)
+app.use('/api/community', communityRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/channels', channelRoutes);
+
+app.use((err, req, res, next) => {
+  const status = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  res.status(status).json({
+    message: err.message || 'Server error',
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+  });
+});
 
 // Start server
 function startServer(port, retriesLeft = 5) {
-    const server = http.createServer(app);
+  const server = http.createServer(app);
 
-    io = new Server(server, {
-      cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      },
+  io = new Server(server, {
+    cors: {
+      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
+  });
+  global.io = io;
+
+  // Socket.io connection
+  io.on('connection', (socket) => {
+    console.log('🔌 Socket connected:', socket.id);
+
+    // Join a channel room
+    socket.on('join:channel', (channelId) => {
+      socket.join(channelId);
+      console.log(`Socket ${socket.id} joined channel ${channelId}`);
     });
 
-    // Attach io to every request AFTER io is created
-    app.use((req, res, next) => {
-      req.io = io;
-      next();
+    // Leave a channel room
+    socket.on('leave:channel', (channelId) => {
+      socket.leave(channelId);
     });
 
-    // Community routes (MUST be AFTER middleware)
-    app.use('/api/community', communityRoutes);
-
-    // Socket.io connection
-    io.on('connection', (socket) => {
-      console.log('🔌 Socket connected:', socket.id);
-
-      // Join a channel room
-      socket.on('join:channel', (channelId) => {
-        socket.join(channelId);
-        console.log(`Socket ${socket.id} joined channel ${channelId}`);
-      });
-
-      // Leave a channel room
-      socket.on('leave:channel', (channelId) => {
-        socket.leave(channelId);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('🔌 Socket disconnected:', socket.id);
-      });
+    socket.on('disconnect', () => {
+      console.log('🔌 Socket disconnected:', socket.id);
     });
+  });
 
-    server.listen(port, () => {
-=======
-
-// Start server
-function startServer(port, retriesLeft = 5) {
-    const server = app.listen(port, () => {
->>>>>>> Stashed changes
-        console.log(`Server is up and running on port number: ${port}`);
-    });
+  server.listen(port, () => {
+    console.log(`Server is up and running on port number: ${port}`);
+  });
 
     server.on('error', (error) => {
         if (error.code === 'EADDRINUSE' && retriesLeft > 0) {

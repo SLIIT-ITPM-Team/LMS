@@ -24,22 +24,11 @@ const protect = asyncHandler(async (req, res, next) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await User.findById(decoded.id).select('-password');
-<<<<<<< HEAD
+            if (!req.user || !req.user.isActive) {
+                res.status(401);
+                throw new Error('Not authorized, user does not exist or is inactive');
+            }
             return next();
-=======
-
-            if (!req.user || !req.user.isActive) {
-                res.status(401);
-                throw new Error('Not authorized, user does not exist or is inactive');
-            }
-
-            if (!req.user || !req.user.isActive) {
-                res.status(401);
-                throw new Error('Not authorized, user does not exist or is inactive');
-            }
-
-            next();
->>>>>>> Development
         } catch (error) {
             console.error(error);
             res.status(401);

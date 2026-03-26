@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-<<<<<<< HEAD
 import { useState, useEffect, useContext } from 'react';
 import { getChannels, getPostsByChannel, deleteChannel } from '../../api/community.api';
 import { AuthContext } from '../../context/AuthContext';
@@ -279,34 +277,6 @@ const Community = () => {
       )}
     </div>
   );
-=======
-import React from 'react';
-
-const Community = () => {
-	return (
-		<div className="min-h-screen bg-slate-50 px-4 py-24 md:px-8">
-			<div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-				<h1 className="text-2xl font-bold text-slate-900">Community</h1>
-				<p className="mt-2 text-sm text-slate-600">Connect with classmates and discuss modules.</p>
-			</div>
-		</div>
-	);
->>>>>>> Development
 };
 
-=======
-import React from 'react';
-
-const Community = () => {
-	return (
-		<div className="min-h-screen bg-slate-50 px-4 py-24 md:px-8">
-			<div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-				<h1 className="text-2xl font-bold text-slate-900">Community</h1>
-				<p className="mt-2 text-sm text-slate-600">Connect with classmates and discuss modules.</p>
-			</div>
-		</div>
-	);
-};
-
->>>>>>> Stashed changes
 export default Community;
