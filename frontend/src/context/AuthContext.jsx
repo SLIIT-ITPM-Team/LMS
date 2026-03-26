@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "../api/auth.api";
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 const USER_KEY = "lms_user";
 const TOKEN_KEY = "lms_token";
+const DEFAULT_ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "admin@gmail.com").toLowerCase();
 
 export const AuthProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
@@ -35,7 +36,13 @@ export const AuthProvider = ({ children }) => {
 			const raw = localStorage.getItem(USER_KEY);
 			if (raw) {
 				const parsed = JSON.parse(raw);
-				setUser(parsed);
+				const normalized = {
+					...parsed,
+					role:
+						parsed?.role ||
+						(parsed?.email?.toLowerCase() === DEFAULT_ADMIN_EMAIL ? "admin" : "student"),
+				};
+				setUser(normalized);
 			}
 		} catch (error) {
 			console.error("Failed to parse persisted auth user", error);

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -10,6 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
+import { getNotifications, getUnreadCount, markAllAsRead, markAsRead } from "../../api/notification.api";
 
 const guestLinks = [
 	{ to: "/", label: "Home" },
@@ -33,12 +34,16 @@ const adminLinks = [
 	{ to: "/admin/users", label: "Users" },
 	{ to: "/admin/modules", label: "Modules" },
 	{ to: "/admin/departments", label: "Departments" },
+	{ to: "/admin/community", label: "Community" },
 	{ to: "/admin/reports", label: "Reports" },
 ];
 
 const Navbar = () => {
 	const [open, setOpen] = useState(false);
 	const [profileOpen, setProfileOpen] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [notifOpen, setNotifOpen] = useState(false);
+	const [notifications, setNotifications] = useState([]);
 	const { isAuthenticated, user, logout, isAdmin } = useAuth();
 	const navigate = useNavigate();
 
@@ -71,6 +76,42 @@ const Navbar = () => {
 		navigate("/", { replace: true });
 	};
 
+	useEffect(() => {
+		let timer;
+
+		const loadUnread = async () => {
+			if (!isAuthenticated) {
+				setUnreadCount(0);
+				return;
+			}
+			try {
+				const response = await getUnreadCount();
+				setUnreadCount(response.data.unreadCount || 0);
+			} catch {
+				setUnreadCount(0);
+			}
+		};
+
+		loadUnread();
+		timer = setInterval(loadUnread, 30000);
+
+		return () => clearInterval(timer);
+	}, [isAuthenticated]);
+
+	useEffect(() => {
+		const loadNotifications = async () => {
+			if (!isAuthenticated || !notifOpen) return;
+			try {
+				const response = await getNotifications({ limit: 10 });
+				setNotifications(response.data.data || []);
+			} catch {
+				setNotifications([]);
+			}
+		};
+
+		loadNotifications();
+	}, [isAuthenticated, notifOpen]);
+
 	return (
 		<header className="fixed top-0 z-50 w-full px-4 py-3 md:px-6">
 			<nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-xl backdrop-blur-xl">
@@ -100,10 +141,67 @@ const Navbar = () => {
 					</div>
 					<button
 						type="button"
-						className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+						className="relative rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
 						aria-label="Notifications"
+						onClick={() => setNotifOpen((prev) => !prev)}
 					>
-						<Bell size={18} />
+						<span className="relative">
+							<Bell size={18} />
+							{unreadCount > 0 && (
+								<span className="absolute -top-2 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white">
+									{unreadCount > 99 ? "99+" : unreadCount}
+								</span>
+							)}
+						</span>
+
+						{notifOpen && (
+							<div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+								<div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+									<p className="text-sm font-semibold text-slate-900">Notifications</p>
+									<button
+										type="button"
+										className="text-xs font-semibold text-indigo-600"
+										onClick={async () => {
+											await markAllAsRead();
+											setUnreadCount(0);
+											setNotifications((prev) =>
+												prev.map((n) => ({ ...n, isRead: true }))
+											);
+										}}
+									>
+										Mark all read
+									</button>
+								</div>
+								<div className="max-h-80 overflow-auto">
+									{notifications.length === 0 ? (
+										<p className="px-4 py-6 text-center text-xs text-slate-500">
+											No notifications yet.
+										</p>
+									) : (
+										notifications.map((note) => (
+											<button
+												key={note._id}
+												type="button"
+												className={`w-full px-4 py-3 text-left text-sm transition ${
+													note.isRead ? "bg-white" : "bg-indigo-50"
+												}`}
+												onClick={async () => {
+													await markAsRead(note._id);
+													setNotifications((prev) =>
+														prev.map((n) => (n._id === note._id ? { ...n, isRead: true } : n))
+													);
+													setUnreadCount((prev) => Math.max(0, prev - 1));
+													setNotifOpen(false);
+												}}
+											>
+												<p className="font-semibold text-slate-800">{note.title}</p>
+												<p className="mt-1 text-xs text-slate-500">{note.message}</p>
+											</button>
+										))
+									)}
+								</div>
+							</div>
+						)}
 					</button>
 					{isAuthenticated ? (
 						<>

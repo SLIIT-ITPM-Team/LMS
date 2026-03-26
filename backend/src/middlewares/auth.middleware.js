@@ -9,22 +9,26 @@ const protect = asyncHandler(async (req, res, next) => {
         req.headers.authorization &&
         req.headers.authorization.startsWith('Bearer')
     ) {
+        token = req.headers.authorization.split(' ')[1];
+
+        // Dev/demo bypass: allow client-side demo tokens to map to default admin
+        if (token.startsWith('demo-token')) {
+            const email = process.env.DEFAULT_ADMIN_EMAIL || 'admin@gmail.com';
+            const adminUser = await User.findOne({ email });
+            if (adminUser) {
+                req.user = adminUser;
+                return next();
+            }
+        }
+
         try {
-            // Get token from header
-            token = req.headers.authorization.split(' ')[1];
-
-            // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // Get user from token
             req.user = await User.findById(decoded.id).select('-password');
-
             if (!req.user || !req.user.isActive) {
                 res.status(401);
                 throw new Error('Not authorized, user does not exist or is inactive');
             }
-
-            next();
+            return next();
         } catch (error) {
             console.error(error);
             res.status(401);
@@ -32,10 +36,8 @@ const protect = asyncHandler(async (req, res, next) => {
         }
     }
 
-    if (!token) {
-        res.status(401);
-        throw new Error('Not authorized, no token');
-    }
+    res.status(401);
+    throw new Error('Not authorized, no token');
 });
 
 const authorize = (...roles) => {
