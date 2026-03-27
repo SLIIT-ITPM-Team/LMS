@@ -1,394 +1,527 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
-import theme from '../theme';
 
-const Quits = () => {
+const circleRadius = 62;
+const circumference = 2 * Math.PI * circleRadius;
+
+function getOptionText(option) {
+  if (typeof option === 'string') return option;
+  if (option && typeof option === 'object' && typeof option.text === 'string') return option.text;
+  return '';
+}
+
+function normalizeQuestion(rawQuestion, index) {
+  const questionText =
+    rawQuestion?.questionText ||
+    rawQuestion?.question ||
+    `Question ${index + 1}`;
+
+  const rawOptions = Array.isArray(rawQuestion?.options) ? rawQuestion.options : [];
+  const options = rawOptions.map(getOptionText).filter(Boolean);
+
+  return {
+    questionNumber: rawQuestion?.questionNumber || index + 1,
+    questionText,
+    difficulty: rawQuestion?.difficulty || 'medium',
+    options
+  };
+}
+
+function escapePdfText(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/[^\x20-\x7E]/g, '');
+}
+
+function createGradientBands() {
+  const bands = [];
+  const steps = 20;
+  for (let index = 0; index < steps; index += 1) {
+    const ratio = index / (steps - 1);
+    const r = 0.96 - ratio * 0.02;
+    const g = 0.98 - ratio * 0.03;
+    const b = 1 - ratio * 0.04;
+    const y = 842 - ((index + 1) * (842 / steps));
+    bands.push(`${r.toFixed(3)} ${g.toFixed(3)} ${b.toFixed(3)} rg 0 ${y.toFixed(2)} 595 ${(842 / steps + 0.5).toFixed(2)} re f`);
+  }
+  return bands.join('\n');
+}
+
+function clipText(value, maxLength = 64) {
+  const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 3)}...`;
+}
+
+function formatLearnerName(emailOrName) {
+  const raw = String(emailOrName || 'Learner')
+    .split('@')[0]
+    .replace(/[._-]+/g, ' ')
+    .trim();
+
+  return raw
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ') || 'Learner';
+}
+
+function wrapTextForPdf(value, maxCharsPerLine = 40, maxLines = 3) {
+  const words = String(value || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  if (!words.length) return [''];
+
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= maxCharsPerLine) {
+      current = next;
+      continue;
+    }
+
+    if (current) lines.push(current);
+    current = word;
+
+    if (lines.length === maxLines - 1) break;
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current);
+  }
+
+  if (lines.length > maxLines) {
+    return lines.slice(0, maxLines);
+  }
+
+  if (words.join(' ').length > lines.join(' ').length && lines.length) {
+    const lastIndex = lines.length - 1;
+    lines[lastIndex] = clipText(lines[lastIndex], Math.max(8, maxCharsPerLine - 2));
+  }
+
+  return lines;
+}
+
+function createCertificatePdfBlob({ userName, topic, score, date, certificateId }) {
+  const safeName = escapePdfText(clipText(userName || 'Learner', 36));
+  const topicLines = wrapTextForPdf(topic || 'Quiz Topic', 46, 2).map((line) => escapePdfText(line));
+  const safeDate = escapePdfText(date || new Date().toLocaleDateString());
+  const safeCertificateId = escapePdfText(certificateId || 'N/A');
+  const safeScore = escapePdfText(`${score}%`);
+
+  const topicLineOne = topicLines[0] || 'Quiz Topic';
+  const topicLineTwo = topicLines[1] || '';
+
+  const stream = [
+    'q',
+    createGradientBands(),
+    'Q',
+    '1 1 1 rg 24 24 547 794 re f',
+    '0.14 0.22 0.42 RG 2.2 w 34 34 527 774 re S',
+    '0.84 0.72 0.38 RG 0.9 w 46 46 503 750 re S',
+    '0.14 0.22 0.42 rg 46 728 503 52 re f',
+    '0.97 0.98 1 rg BT /F2 28 Tf 104 747 Td (CERTIFICATE OF ACHIEVEMENT) Tj ET',
+    '0.45 0.54 0.68 rg BT /F1 11 Tf 66 706 Td (Certificate ID: ' + safeCertificateId + ') Tj ET',
+    '0.37 0.44 0.57 rg BT /F1 13 Tf 220 662 Td (This certifies that) Tj ET',
+    '0.12 0.20 0.40 rg BT /F2 34 Tf 98 620 Td (' + safeName + ') Tj ET',
+    '0.82 0.86 0.93 RG 1 w 92 610 m 502 610 l S',
+    '0.37 0.44 0.57 rg BT /F1 12 Tf 118 580 Td (has successfully completed a professional quiz assessment) Tj ET',
+    '0.37 0.44 0.57 rg BT /F1 12 Tf 238 560 Td (on the topic) Tj ET',
+    '0.10 0.19 0.39 rg BT /F2 18 Tf 90 532 Td (' + topicLineOne + ') Tj ET',
+    '0.10 0.19 0.39 rg BT /F2 18 Tf 90 510 Td (' + topicLineTwo + ') Tj ET',
+    '0.96 0.97 0.99 rg 82 420 431 82 re f',
+    '0.83 0.88 0.96 RG 1 w 82 420 431 82 re S',
+    '0.18 0.26 0.45 rg BT /F1 13 Tf 104 468 Td (Final Score) Tj ET',
+    '0.11 0.49 0.32 rg BT /F2 30 Tf 228 460 Td (' + safeScore + ') Tj ET',
+    '0.42 0.49 0.60 rg BT /F1 11 Tf 104 438 Td (Date Issued: ' + safeDate + ') Tj ET',
+    '0.42 0.49 0.60 rg BT /F1 11 Tf 328 438 Td (Issued by LMS Quiz Engine) Tj ET',
+    '0.95 0.96 1 rg 422 300 96 96 re f',
+    '0.80 0.86 0.95 RG 1 w 422 300 96 96 re S',
+    '0.16 0.24 0.43 rg BT /F2 15 Tf 452 352 Td (LMS) Tj ET',
+    '0.16 0.24 0.43 rg BT /F1 9 Tf 437 338 Td (CERTIFIED) Tj ET',
+    '0.16 0.24 0.43 rg BT /F1 9 Tf 438 325 Td (ACHIEVEMENT) Tj ET',
+    '0.70 0.76 0.85 RG 1 w 78 214 m 286 214 l S',
+    '0.32 0.40 0.53 rg BT /F1 11 Tf 133 199 Td (Academic Coordinator) Tj ET',
+    '0.70 0.76 0.85 RG 1 w 315 214 m 520 214 l S',
+    '0.32 0.40 0.53 rg BT /F1 11 Tf 381 199 Td (Authorized Signature) Tj ET'
+  ].join('\n');
+
+  const objects = [];
+  objects.push('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
+  objects.push('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
+  objects.push('3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >> endobj');
+  objects.push(`4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`);
+  objects.push('5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
+  objects.push('6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj');
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((object) => {
+    offsets.push(pdf.length);
+    pdf += `${object}\n`;
+  });
+
+  const xrefStart = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += '0000000000 65535 f \n';
+  for (let index = 1; index <= objects.length; index += 1) {
+    pdf += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  }
+
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+  return new Blob([pdf], { type: 'application/pdf' });
+}
+
+const QuizCard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [quizName, setQuizName] = useState('');
-  const [questions, setQuestions] = useState([]);
+  const [userEmail, setUserEmail] = useState(localStorage.getItem('quiz_user_email') || '');
+  const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(null);
-  const [showResult, setShowResult] = useState(false);
+  const [result, setResult] = useState(null);
+  const [showResultModal, setShowResultModal] = useState(false);
 
   useEffect(() => {
-    async function fetchQuestions() {
+    const loadQuiz = async () => {
+      setLoading(true);
+      setError('');
       try {
-        setLoading(true);
-        setError('');
-        const res = await api.get(`/api/quiz/${id}/questions`);
-        setQuizName(res.data.name || 'Quiz');
-        setQuestions((res.data.questions || []).slice(0, 10));
-      } catch (err) {
-        if (err.request) {
-          setError('Cannot reach backend server. Please start backend and try again.');
-        } else {
-          setError('Failed to load quiz questions.');
-        }
+        const response = await api.get(`/api/quiz/${id}/questions`);
+        const quizId = response.data?.quizId || response.data?._id || id;
+        const normalizedQuestions = (response.data?.questions || []).map(normalizeQuestion);
+
+        setQuiz({
+          id: quizId,
+          title: response.data?.title || response.data?.name || 'Quiz',
+          summary: response.data?.summary || '',
+          questions: normalizedQuestions
+        });
+      } catch (requestError) {
+        setError(requestError.response?.data?.message || 'Failed to load quiz questions.');
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    fetchQuestions();
+    loadQuiz();
   }, [id]);
 
-  const selectOption = (qId, option) => {
-    if (submitted) return;
-    setAnswers((prev) => ({ ...prev, [qId]: option }));
+  const completion = useMemo(() => {
+    if (!quiz?.questions?.length) return 0;
+    return Math.round((Object.keys(answers).length / quiz.questions.length) * 100);
+  }, [answers, quiz]);
+
+  const question = quiz?.questions?.[currentQuestion];
+
+  const handleSelectAnswer = (option) => {
+    const selectedText = getOptionText(option);
+    setAnswers((previous) => ({
+      ...previous,
+      [currentQuestion + 1]: selectedText
+    }));
   };
 
-  const handleSubmit = () => {
-    if (!questions.length) return;
+  const handleSubmit = async () => {
+    if (!quiz) return;
 
-    const answeredCount = Object.keys(answers).length;
-    if (answeredCount < questions.length) {
-      alert('Please answer all 10 quizzes before submitting.');
+    if (!quiz.id) {
+      setError('Invalid quiz id. Please reload and try again.');
       return;
     }
 
-    let correct = 0;
-    questions.forEach((q, index) => {
-      const selected = answers[index + 1];
-      if (selected && selected.isCorrect) {
-        correct += 1;
-      }
+    if (!userEmail.trim()) {
+      setError('Please enter your email before submitting.');
+      return;
+    }
+
+    if (Object.keys(answers).length !== quiz.questions.length) {
+      setError('Please answer all 10 questions before submitting.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError('');
+
+      localStorage.setItem('quiz_user_email', userEmail.trim().toLowerCase());
+
+      const response = await api.post(`/api/quiz/${quiz.id}/attempt`, {
+        userEmail: userEmail.trim().toLowerCase(),
+        answers
+      });
+
+      setResult(response.data.result);
+      setShowResultModal(true);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Failed to evaluate quiz attempt.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDownloadCertificate = () => {
+    if (!result?.passed || !result?.certificate?.certificateId) return;
+
+    const learnerName = formatLearnerName(userEmail || 'Learner');
+    const date = new Date().toLocaleDateString();
+
+    const pdfBlob = createCertificatePdfBlob({
+      userName: learnerName,
+      topic: quiz?.title || 'Quiz Topic',
+      score: result.scorePercentage,
+      date,
+      certificateId: result.certificate.certificateId
     });
 
-    const total = questions.length;
-    const percent = Math.round((correct / total) * 100);
-    setScore({ correct, total, percent });
-    setSubmitted(true);
-    setShowResult(false);
+    const url = URL.createObjectURL(pdfBlob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `certificate-${result.certificate.certificateId}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   };
 
-  const resetAll = () => {
-    setAnswers({});
-    setSubmitted(false);
-    setScore(null);
-    setShowResult(false);
-  };
-
-  const downloadCertificate = () => {
-    if (!score || score.percent < 60) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1800;
-    canvas.height = 1270;
-    const ctx = canvas.getContext('2d');
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString();
-    const certId = `CERT-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${String(id || '').slice(-6).toUpperCase() || '000001'}`;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
-    const bgGradient = ctx.createLinearGradient(0, 0, w, h);
-    bgGradient.addColorStop(0, '#fffdf5');
-    bgGradient.addColorStop(1, '#f8fbff');
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.strokeStyle = '#053668';
-    ctx.lineWidth = 14;
-    ctx.strokeRect(38, 38, w - 76, h - 76);
-
-    ctx.strokeStyle = '#FF7100';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(64, 64, w - 128, h - 128);
-
-    ctx.strokeStyle = '#F7ECB5';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([12, 8]);
-    ctx.strokeRect(88, 88, w - 176, h - 176);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = '#053668';
-    ctx.textAlign = 'center';
-    ctx.font = '600 32px Georgia, serif';
-    ctx.fillText('Certificate ID: ' + certId, w / 2, 170);
-
-    ctx.fillStyle = '#053668';
-    ctx.font = '700 88px Georgia, serif';
-    ctx.fillText('Certificate of Achievement', w / 2, 300);
-
-    ctx.fillStyle = '#FF7100';
-    ctx.font = '600 40px Georgia, serif';
-    ctx.fillText('This certifies successful completion of the quiz', w / 2, 380);
-
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '500 34px Georgia, serif';
-    ctx.fillText('Course / Topic', w / 2, 485);
-
-    ctx.fillStyle = '#053668';
-    ctx.font = '700 58px Georgia, serif';
-    ctx.fillText(quizName || 'Summary Quiz', w / 2, 570);
-
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '500 34px Georgia, serif';
-    ctx.fillText('Final Score', w / 2, 675);
-
-    ctx.fillStyle = '#053668';
-    ctx.font = '700 62px Georgia, serif';
-    ctx.fillText(`${score.correct}/${score.total} (${score.percent}%)`, w / 2, 755);
-
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(240, 980);
-    ctx.lineTo(760, 980);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(1040, 980);
-    ctx.lineTo(1560, 980);
-    ctx.stroke();
-
-    ctx.fillStyle = '#374151';
-    ctx.font = '500 30px Georgia, serif';
-    ctx.fillText('Authorized Signature', 500, 1030);
-    ctx.fillText('Date Issued', 1300, 1030);
-
-    ctx.fillStyle = '#111827';
-    ctx.font = '600 34px Georgia, serif';
-    ctx.fillText(formattedDate, 1300, 940);
-
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '500 24px Georgia, serif';
-    ctx.fillText('Generated by Quiz Learning Platform', w / 2, 1145);
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `certificate-${(quizName || 'summary-quiz').replace(/\s+/g, '-').toLowerCase()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, 'image/png');
-  };
+  const strokeOffset = circumference - ((result?.scorePercentage || 0) / 100) * circumference;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: `linear-gradient(145deg, ${theme.givry} 0%, #ffffff 55%, ${theme.givry} 100%)`,
-        padding: '28px 16px',
-        fontFamily: 'Inter, system-ui, Arial'
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1040,
-          margin: '0 auto',
-          background: '#fff',
-          borderRadius: 18,
-          border: `1px solid ${theme.givry}`,
-          boxShadow: '0 14px 40px rgba(5,54,104,0.12)',
-          padding: 24
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 md:px-8">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 style={{ margin: 0, color: theme.teal, fontSize: 30, letterSpacing: 0.2 }}>Quizzes</h2>
-            <p style={{ margin: '6px 0 0', color: '#6b7280', fontWeight: 600 }}>{quizName}</p>
+            <h1 className="text-2xl font-bold md:text-3xl">{quiz?.title || 'Quiz Attempt'}</h1>
+            <p className="mt-1 text-sm text-slate-600">Answer all questions to get evaluated and generate certificate on 60%+.</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => navigate(-1)}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 10,
-                border: `1px solid ${theme.teal}`,
-                background: '#fff',
-                color: theme.teal,
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Back
-            </button>
+          <button
+            type="button"
+            onClick={() => navigate('/quizzes')}
+            className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            Back
+          </button>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="mb-2 block text-sm font-semibold text-slate-700">Your Email</label>
+          <input
+            type="email"
+            value={userEmail}
+            onChange={(event) => setUserEmail(event.target.value)}
+            placeholder="student@example.com"
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
+          />
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between text-xs text-slate-600">
+            <span>Progress</span>
+            <span>{completion}%</span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
+              animate={{ width: `${completion}%` }}
+              transition={{ duration: 0.35 }}
+            />
           </div>
         </div>
 
-        {loading && <p style={{ color: '#6b7280', fontWeight: 600 }}>Loading quizzes...</p>}
-        {error && (
-          <p style={{ color: '#b91c1c', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '10px 12px', fontWeight: 600 }}>
+        {loading ? (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">Loading questions...</div>
+        ) : null}
+
+        {error ? (
+          <div className="mt-6 rounded-2xl border border-rose-400/50 bg-rose-600/20 px-4 py-3 text-sm text-rose-100">
             {error}
-          </p>
-        )}
-        {!loading && !error && questions.length === 0 && <p style={{ color: '#6b7280' }}>No quizzes available.</p>}
+          </div>
+        ) : null}
 
-        {questions.length > 0 && (
-          <div style={{ display: 'grid', gap: 14 }}>
-            <div style={{ color: '#6b7280', fontSize: 14, fontWeight: 700 }}>
-              Showing {questions.length}/10 quizzes
+        {!loading && quiz?.questions?.length ? (
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+                Question {currentQuestion + 1} / {quiz.questions.length}
+              </span>
+              <span className="rounded-full bg-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-200">
+                {question?.difficulty || 'medium'}
+              </span>
             </div>
 
-          {showResult && score && (
-            <div
-              style={{
-                padding: 24,
-                borderRadius: 14,
-                background: '#fff',
-                border: `1px solid ${theme.givry}`,
-                boxShadow: '0 10px 30px rgba(15,23,42,0.12)',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
-            >
-              <h2 style={{ margin: '0 0 16px 0', fontSize: 32, color: theme.teal }}>My Result</h2>
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
-                  Correct answers: {score.correct} / {score.total}
-                </div>
-                <div style={{ fontSize: 42, fontWeight: 700, color: score.percent >= 60 ? '#10b981' : '#f59e0b' }}>
-                  {score.percent}%
-                </div>
-              </div>
-
-              {score.percent >= 60 ? (
-                <button onClick={downloadCertificate} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: theme.blaze, color: '#fff', fontWeight: 700, cursor: 'pointer', marginRight: 8 }}>
-                  Download Certificate
-                </button>
-              ) : (
-                <p style={{ color: '#6b7280', marginBottom: 12 }}>Get at least 60% to download certificate.</p>
-              )}
-
-              <button onClick={() => setShowResult(false)} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: theme.teal, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Close</button>
-            </div>
-          )}
-
-          {questions.map((q, index) => {
-            const questionId = index + 1;
-            return (
-              <div
-                key={questionId}
-                style={{
-                  padding: 18,
-                  borderRadius: 12,
-                  background: '#ffffff',
-                  border: `1px solid ${theme.givry}`,
-                  boxShadow: '0 8px 24px rgba(15,23,42,0.06)'
-                }}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuestion}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.24 }}
               >
-                <div style={{ marginBottom: 12, fontWeight: 700, color: theme.teal, lineHeight: 1.45 }}>
-                  Q{questionId}. {q.questionText}
-                </div>
+                <h2 className="text-lg font-semibold leading-relaxed text-slate-900 md:text-xl">
+                  {question?.questionText}
+                </h2>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-                  {q.options.map((opt, idx) => {
-                    const selected = answers[questionId];
-                    const isChosen = selected && selected.text === opt.text;
-                    let background = isChosen ? '#e7f0ff' : '#fff';
-                    let borderColor = isChosen ? '#93c5fd' : '#e5e7eb';
-                    let color = '#111827';
-
-                    if (submitted) {
-                      if (opt.isCorrect) {
-                        background = '#dcfce7';
-                        borderColor = '#16a34a';
-                        color = '#166534';
-                      } else if (isChosen && !opt.isCorrect) {
-                        background = '#fee2e2';
-                        borderColor = '#dc2626';
-                        color = '#991b1b';
-                      }
-                    }
-
+                <div className="mt-4 grid gap-3">
+                  {question?.options?.map((option, index) => {
+                    const optionText = getOptionText(option);
+                    const selected = answers[currentQuestion + 1] === optionText;
                     return (
-                      <button
-                        key={idx}
-                        onClick={() => selectOption(questionId, opt)}
-                        disabled={submitted}
-                        style={{
-                          padding: '11px 12px',
-                          borderRadius: 10,
-                          border: `1px solid ${borderColor}`,
-                          background,
-                          color,
-                          cursor: submitted ? 'default' : 'pointer',
-                          textAlign: 'left',
-                          fontWeight: 600
-                        }}
+                      <motion.button
+                        key={`${index}-${optionText}`}
+                        whileTap={{ scale: 0.99 }}
+                        type="button"
+                        onClick={() => handleSelectAnswer(option)}
+                        className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition md:text-base ${
+                          selected
+                            ? 'border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md'
+                            : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                        }`}
                       >
-                        {opt.text}
-                      </button>
+                        {optionText}
+                      </motion.button>
                     );
                   })}
                 </div>
+              </motion.div>
+            </AnimatePresence>
 
-                {submitted && answers[questionId] && (
-                  <p style={{ marginTop: 8, fontWeight: 700, color: answers[questionId].isCorrect ? '#166534' : '#991b1b' }}>
-                    {answers[questionId].isCorrect ? 'Correct answer' : 'Incorrect answer'}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+            <div className="mt-6 flex flex-wrap justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentQuestion((prev) => Math.max(prev - 1, 0))}
+                disabled={currentQuestion === 0}
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Previous
+              </button>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-            <button
-              onClick={resetAll}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 10,
-                border: `1px solid ${theme.teal}`,
-                background: '#fff',
-                color: theme.teal,
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Reset
-            </button>
-            {!submitted ? (
-              <button
-                onClick={handleSubmit}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: theme.teal,
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(5,54,104,0.25)'
-                }}
-              >
-                Submit
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowResult(true)}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: theme.teal,
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 20px rgba(5,54,104,0.25)'
-                }}
-              >
-                View my result
-              </button>
-            )}
+              {currentQuestion < quiz.questions.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setCurrentQuestion((prev) => Math.min(prev + 1, quiz.questions.length - 1))}
+                  className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? 'Evaluating...' : 'Submit Quiz'}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        ) : null}
       </div>
+
+      <AnimatePresence>
+        {showResultModal && result ? (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/20 bg-slate-900 p-5 text-white shadow-2xl md:p-7"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-xl font-bold md:text-2xl">Quiz Result</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowResultModal(false)}
+                  className="rounded-lg border border-white/30 px-3 py-1.5 text-sm"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-6 md:grid-cols-[180px,1fr] md:items-center">
+                <div className="flex justify-center">
+                  <svg width="150" height="150" viewBox="0 0 150 150">
+                    <circle cx="75" cy="75" r={circleRadius} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="12" />
+                    <circle
+                      cx="75"
+                      cy="75"
+                      r={circleRadius}
+                      fill="none"
+                      stroke={result.passed ? '#34d399' : '#f59e0b'}
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeOffset}
+                      transform="rotate(-90 75 75)"
+                    />
+                    <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" className="fill-white text-2xl font-bold">
+                      {result.scorePercentage}%
+                    </text>
+                  </svg>
+                </div>
+
+                <div>
+                  <p className="text-lg font-semibold text-slate-100">{result.passed ? 'Passed ✅' : 'Not Passed ❌'}</p>
+                  <p className="mt-1 text-sm text-slate-300">Correct Answers: {result.correctCount} / {result.totalQuestions}</p>
+                  <p className="mt-1 text-sm text-slate-300">Attempt Number: {result.attemptNumber}</p>
+                  <p className="mt-1 text-sm text-slate-300">User: {result.userEmail}</p>
+                  {result.certificate?.certificateId ? (
+                    <p className="mt-1 text-sm text-emerald-300">Certificate ID: {result.certificate.certificateId}</p>
+                  ) : null}
+
+                  {result.passed ? (
+                    <button
+                      type="button"
+                      onClick={handleDownloadCertificate}
+                      className="mt-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Download Certificate PDF
+                    </button>
+                  ) : (
+                    <p className="mt-3 text-sm text-amber-300">Score at least 60% to generate the certificate.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <h4 className="text-base font-semibold">Question Feedback</h4>
+                {result.answers.map((item) => (
+                  <div
+                    key={item.questionNumber}
+                    className={`rounded-xl border px-4 py-3 text-sm ${
+                      item.isCorrect ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-rose-400/50 bg-rose-500/10'
+                    }`}
+                  >
+                    <p className="font-semibold">Q{item.questionNumber}: {item.questionText}</p>
+                    <p className="mt-1 text-slate-200">Your Answer: {getOptionText(item.selectedAnswer) || 'Not answered'}</p>
+                    <p className="text-slate-200">Correct Answer: {getOptionText(item.correctAnswer)}</p>
+                    <p className={`mt-1 font-semibold ${item.isCorrect ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {item.isCorrect ? 'Correct' : 'Incorrect'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 };
 
-export default Quits;
+export default QuizCard;
