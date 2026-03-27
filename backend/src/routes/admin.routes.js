@@ -10,6 +10,7 @@ const {
     getStatistics,
     getDepartments,
     createDepartment,
+    createModule,
     getModules,
 } = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
@@ -42,5 +43,14 @@ router.get('/statistics', getStatistics);
 router.get('/departments', getDepartments);
 router.post('/departments', [body('name').notEmpty().withMessage('Department name is required')], createDepartment);
 router.get('/modules', getModules);
+router.post(
+    '/modules',
+    [
+        body('name').trim().notEmpty().withMessage('Module name is required'),
+        body('code').trim().notEmpty().withMessage('Module code is required'),
+        body('department').notEmpty().withMessage('Department is required'),
+    ],
+    createModule
+);
 
 module.exports = router;

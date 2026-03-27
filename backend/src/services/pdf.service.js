@@ -1,46 +1,221 @@
-import fs from 'fs/promises';
-import pdfParse from 'pdf-parse';
-import mammoth from 'mammoth';
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
-const SUPPORTED_MIME_TYPES = {
-  'application/pdf': 'pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-    'docx',
-};
+/**
+ * Generate PDF from course summary
+ * @param {Object} courseData - Course data including summary
+ * @returns {Promise<string>} - Path to generated PDF file
+ */
+async function generateCoursePDF(courseData) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Ensure uploads directory exists
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
 
-export const isSupportedMime = (mimetype = '') =>
-  Boolean(SUPPORTED_MIME_TYPES[mimetype]);
+      // Generate filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `course-summary-${courseData.title.replace(/\s+/g, '-').toLowerCase()}-${timestamp}.pdf`;
+      const filePath = path.join(uploadsDir, filename);
 
-export const resolveFileType = (mimetype = '') => SUPPORTED_MIME_TYPES[mimetype];
+      // Create PDF document
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50
+      });
 
-const loadBuffer = async (file) => {
-  if (!file) throw new Error('File missing');
-  if (file.buffer) return file.buffer;
-  if (file.path) return fs.readFile(file.path);
-  throw new Error('File buffer not available');
-};
+      // Pipe to file
+      const writeStream = fs.createWriteStream(filePath);
+      doc.pipe(writeStream);
 
-export const extractTextFromFile = async (file) => {
-  if (!file) {
-    throw new Error('No file provided');
+      // Add header with LMS branding
+      addHeader(doc, courseData.title);
+      
+      // Add course information
+      addCourseInfo(doc, courseData);
+      
+      // Add summary content
+      addSummaryContent(doc, courseData.summaryText);
+      
+      // Add footer
+      addFooter(doc);
+
+      // Finalize PDF
+      doc.end();
+
+      writeStream.on('finish', () => {
+        resolve(`/uploads/${filename}`);
+      });
+
+      writeStream.on('error', (error) => {
+        reject(new Error(`Failed to create PDF: ${error.message}`));
+      });
+
+    } catch (error) {
+      reject(new Error(`PDF generation failed: ${error.message}`));
+    }
+  });
+}
+
+/**
+ * Add header with LMS branding
+ * @param {PDFDocument} doc - PDF document instance
+ * @param {string} title - Course title
+ */
+function addHeader(doc, title) {
+  // LMS Logo/Title (simplified)
+  doc.font('Helvetica-Bold')
+     .fontSize(24)
+     .fillColor('#6366F1')
+     .text('EduFlow LMS', 50, 50);
+
+  doc.font('Helvetica')
+     .fontSize(10)
+     .fillColor('#666666')
+     .text('Course Summary Document', 50, 80);
+
+  // Course title
+  doc.moveDown(2)
+     .font('Helvetica-Bold')
+     .fontSize(18)
+     .fillColor('#333333')
+     .text(title, {
+       align: 'center'
+     });
+
+  // Separator line
+  doc.moveDown(1)
+     .strokeColor('#E5E7EB')
+     .lineWidth(1)
+     .moveTo(50, doc.y + 10)
+     .lineTo(550, doc.y + 10)
+     .stroke();
+}
+
+/**
+ * Add course information section
+ * @param {PDFDocument} doc - PDF document instance
+ * @param {Object} courseData - Course data
+ */
+function addCourseInfo(doc, courseData) {
+  doc.moveDown(2)
+     .font('Helvetica-Bold')
+     .fontSize(12)
+     .fillColor('#374151')
+     .text('Course Information', {
+       underline: true
+     });
+
+  doc.moveDown(1)
+     .font('Helvetica')
+     .fontSize(11)
+     .fillColor('#4B5563');
+
+  const infoLines = [
+    `Module: ${courseData.moduleName || 'N/A'}`,
+    `Department: ${courseData.department || 'N/A'}`,
+    `Generated: ${new Date().toLocaleDateString()}`,
+    `Video URL: ${courseData.videoUrl || 'N/A'}`
+  ];
+
+  infoLines.forEach(line => {
+    doc.text(line, 50, doc.y, {
+      continued: false
+    });
+  });
+}
+
+/**
+ * Add summary content section
+ * @param {PDFDocument} doc - PDF document instance
+ * @param {string} summaryText - Summary text content
+ */
+function addSummaryContent(doc, summaryText) {
+  doc.moveDown(2)
+     .font('Helvetica-Bold')
+     .fontSize(12)
+     .fillColor('#374151')
+     .text('Summary Content', {
+       underline: true
+     });
+
+  doc.moveDown(1)
+     .font('Helvetica')
+     .fontSize(11)
+     .fillColor('#333333')
+     .text(summaryText, {
+       align: 'justify',
+       lineGap: 5,
+       indent: 10
+     });
+}
+
+/**
+ * Add footer with page numbers and branding
+ * @param {PDFDocument} doc - PDF document instance
+ */
+function addFooter(doc) {
+  // Add page number and footer
+  const addFooterToPage = () => {
+    doc.font('Helvetica-Oblique')
+       .fontSize(9)
+       .fillColor('#9CA3AF')
+       .text(
+         `Page ${doc.bufferedPageRange().start + 1} • Generated by EduFlow LMS`,
+         50,
+         doc.page.height - 50,
+         { align: 'center' }
+       );
+  };
+
+  // Add footer to current page
+  addFooterToPage();
+
+  // Add footer to future pages
+  doc.on('pageAdded', addFooterToPage);
+}
+
+/**
+ * Delete PDF file
+ * @param {string} filePath - Path to PDF file
+ * @returns {Promise<boolean>} - Success status
+ */
+async function deletePDF(filePath) {
+  return new Promise((resolve, reject) => {
+    try {
+      const fullPath = path.join(__dirname, '../../', filePath);
+      
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    } catch (error) {
+      reject(new Error(`Failed to delete PDF: ${error.message}`));
+    }
+  });
+}
+
+/**
+ * Check if PDF exists
+ * @param {string} filePath - Path to PDF file
+ * @returns {boolean} - File existence status
+ */
+function pdfExists(filePath) {
+  try {
+    const fullPath = path.join(__dirname, '../../', filePath);
+    return fs.existsSync(fullPath);
+  } catch (error) {
+    return false;
   }
+}
 
-  if (!isSupportedMime(file.mimetype)) {
-    throw new Error('Unsupported file type. Only PDF and DOCX are allowed.');
-  }
-
-  const buffer = await loadBuffer(file);
-  const type = resolveFileType(file.mimetype);
-
-  if (type === 'pdf') {
-    const { text } = await pdfParse(buffer);
-    return text?.trim() || '';
-  }
-
-  if (type === 'docx') {
-    const { value } = await mammoth.extractRawText({ buffer });
-    return value?.trim() || '';
-  }
-
-  return '';
+module.exports = {
+  generateCoursePDF,
+  deletePDF,
+  pdfExists
 };

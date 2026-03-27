@@ -246,7 +246,7 @@ const CommunityManagement = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-24 md:px-8">
+    <div className="px-1 py-2 md:px-2">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-6 shadow-sm">
           <div>
