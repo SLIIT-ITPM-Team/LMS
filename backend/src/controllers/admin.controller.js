@@ -292,11 +292,53 @@ const createDepartment = asyncHandler(async (req, res) => {
     res.status(201).json({ department });
 });
 
+// @desc    Create module under a department
+// @route   POST /api/admin/modules
+// @access  Private/Admin
+const createModule = asyncHandler(async (req, res) => {
+    const { name, code, description, department } = req.body;
+
+    if (!name?.trim() || !code?.trim() || !department) {
+        res.status(400);
+        throw new Error('Name, code and department are required');
+    }
+
+    const deptDoc = await Department.findById(department);
+    if (!deptDoc) {
+        res.status(404);
+        throw new Error('Department not found');
+    }
+
+    const exists = await Module.findOne({ code: code.trim() });
+    if (exists) {
+        res.status(400);
+        throw new Error('Module code already exists');
+    }
+
+    const moduleDoc = await Module.create({
+        name: name.trim(),
+        code: code.trim(),
+        description: description?.trim() || '',
+        department,
+    });
+
+    await moduleDoc.populate('department', 'name');
+    res.status(201).json({ module: moduleDoc });
+});
+
 // @desc    Get modules for assignment UI
 // @route   GET /api/admin/modules
 // @access  Private/Admin
 const getModules = asyncHandler(async (req, res) => {
-    const modules = await Module.find({}).select('name code department').populate('department', 'name');
+    const { department } = req.query;
+    const filter = {};
+    if (department) filter.department = department;
+
+    const modules = await Module.find(filter)
+        .select('name code description department createdAt')
+        .populate('department', 'name')
+        .sort({ name: 1 });
+
     res.json({ modules });
 });
 
@@ -310,5 +352,6 @@ module.exports = {
     getStatistics,
     getDepartments,
     createDepartment,
+    createModule,
     getModules,
 };

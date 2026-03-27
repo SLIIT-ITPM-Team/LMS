@@ -93,8 +93,15 @@ async function ensureDefaultChannels(adminUser) {
   ];
 
   for (const ch of defaults) {
-    const exists = await Channel.findOne({ name: ch.name, isActive: true });
-    if (exists) continue;
+    const exists = await Channel.findOne({ name: ch.name });
+    if (exists) {
+      if (!exists.isActive) {
+        exists.isActive = true;
+        await exists.save();
+        console.log(`Reactivated channel: ${ch.name}`);
+      }
+      continue;
+    }
     await Channel.create({
       ...ch,
       createdBy: adminUser._id,
@@ -112,6 +119,7 @@ const notificationRoutes = require('./routes/notification.routes.js');
 const channelRoutes = require('./routes/channel.routes.js');
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
+const courseRouter = require('./routes/course.routes.js');
 
 // Health check endpoint first
 app.use('/api/health', healthRouter);
@@ -121,6 +129,7 @@ app.use('/api/admin', adminRouter);
 
 app.use('/api/quiz', quizRouter);
 app.use('/quiz', quizRouter);
+app.use('/api/courses', courseRouter);
 
 // Global io instance
 let io;

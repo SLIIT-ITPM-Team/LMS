@@ -5,6 +5,9 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/dashboard/Dashboard";
 import CourseDetails from "./pages/courses/CourseDetails";
+import CourseView from "./pages/courses/CourseView";
+import StudentCourses from "./pages/student/StudentCourses";
+import ManageCourses from "./pages/admin/ManageCourses";
 import QuizPage from "./pages/quizzes/QuizPage";
 import CommunityHub from "./pages/community/CommunityHub";
 import Notifications from "./pages/notifications/Notifications";
@@ -17,6 +20,7 @@ import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import CommunityManagement from "./pages/admin/CommunityManagement";
 import Reports from "./pages/admin/Reports";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import AdminLayout from "./components/layout/AdminLayout";
 
 const AppRoutes = () => (
   <Routes>
@@ -37,7 +41,23 @@ const AppRoutes = () => (
       path="/courses/:id"
       element={
         <ProtectedRoute roles={["student", "admin"]}>
-          <CourseDetails />
+          <CourseView />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/student/courses"
+      element={
+        <ProtectedRoute roles={["student"]}>
+          <StudentCourses />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/admin/courses"
+      element={
+        <ProtectedRoute roles={["admin"]}>
+          <ManageCourses />
         </ProtectedRoute>
       }
     />
@@ -95,50 +115,18 @@ const AppRoutes = () => (
       path="/admin"
       element={
         <ProtectedRoute roles={["admin"]}>
-          <AdminDashboard />
+          <AdminLayout />
         </ProtectedRoute>
       }
-    />
-    <Route
-      path="/admin/users"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <UserManagement />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/modules"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <ModuleManagement />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/departments"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <DepartmentManagement />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/community"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <CommunityManagement />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/admin/reports"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <Reports />
-        </ProtectedRoute>
-      }
-    />
+    >
+      <Route index element={<AdminDashboard />} />
+      <Route path="courses" element={<ManageCourses />} />
+      <Route path="users" element={<UserManagement />} />
+      <Route path="modules" element={<ModuleManagement />} />
+      <Route path="departments" element={<DepartmentManagement />} />
+      <Route path="community" element={<CommunityManagement />} />
+      <Route path="reports" element={<Reports />} />
+    </Route>
 
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>

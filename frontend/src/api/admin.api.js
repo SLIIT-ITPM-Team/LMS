@@ -51,7 +51,12 @@ export const createDepartment = async (data) => {
   return response.data;
 };
 
-export const getModules = async () => {
-  const response = await api.get('/api/admin/modules');
+export const getModules = async (params = {}) => {
+  const response = await api.get('/api/admin/modules', { params });
+  return response.data;
+};
+
+export const createModule = async (data) => {
+  const response = await api.post('/api/admin/modules', data);
   return response.data;
 };

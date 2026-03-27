@@ -2,14 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2, Edit3, Megaphone } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
-
 const emptyForm = {
   name: "",
   description: "",
   topic: "",
   subject: "",
-  icon: "",
-  coverImage: "",
   expertName: "",
   expertTitle: "",
 };
@@ -18,6 +15,22 @@ const emptyAnnouncement = {
   title: "",
   content: "",
 };
+
+const inputClasses =
+  "w-full rounded-xl border border-slate-200 bg-sky-50 px-3 py-2 text-sm text-slate-800 placeholder-slate-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+
+const selectClasses = `${inputClasses} appearance-none pr-8`;
+
+const textAreaClasses = `${inputClasses} min-h-[120px]`;
+
+const lettersOnlyRegex = /^[A-Za-z\s]+$/;
+const lecturerRegex = /^[A-Za-z.\s]+$/;
+
+const countWords = (value = "") =>
+  value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
 
 const CommunityManagement = () => {
   const [channels, setChannels] = useState([]);
@@ -82,8 +95,6 @@ const CommunityManagement = () => {
       description: channel.description || "",
       topic: channel.topic || "",
       subject: channel.subject || "",
-      icon: channel.icon || "",
-      coverImage: channel.coverImage || "",
       expertName: channel.expert?.name || "",
       expertTitle: channel.expert?.title || "",
     });
@@ -94,6 +105,28 @@ const CommunityManagement = () => {
     event.preventDefault();
     if (!form.name || !form.description || !form.topic || !form.subject) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    const validateLetters = (value, label) => {
+      if (!lettersOnlyRegex.test(value.trim())) {
+        toast.error(`${label} can contain letters and spaces only`);
+        return false;
+      }
+      return true;
+    };
+
+    if (!validateLetters(form.name, "Name")) return;
+    if (!validateLetters(form.topic, "Topic")) return;
+    if (!validateLetters(form.subject, "Subject")) return;
+
+    if (form.expertName && !lecturerRegex.test(form.expertName.trim())) {
+      toast.error("Lecturer Name can contain letters, spaces, and periods only");
+      return;
+    }
+
+    if (form.expertTitle && !lecturerRegex.test(form.expertTitle.trim())) {
+      toast.error("Lecturer Position can contain letters, spaces, and periods only");
       return;
     }
 
@@ -162,6 +195,18 @@ const CommunityManagement = () => {
       return;
     }
 
+    const titleWordCount = countWords(announcementForm.title || "");
+    if (titleWordCount > 10) {
+      toast.error("Title can contain a maximum of 10 words");
+      return;
+    }
+
+    const contentWordCount = countWords(announcementForm.content || "");
+    if (contentWordCount > 50) {
+      toast.error("Content can contain a maximum of 50 words");
+      return;
+    }
+
     try {
       if (editingAnnouncement) {
         const response = await api.put(`/api/community/posts/${editingAnnouncement._id}`, {
@@ -201,7 +246,7 @@ const CommunityManagement = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-24 md:px-8">
+    <div className="px-1 py-2 md:px-2">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-6 shadow-sm">
           <div>
@@ -225,7 +270,7 @@ const CommunityManagement = () => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search channels"
-            className="w-full text-sm text-slate-700 outline-none"
+            className={`${inputClasses} bg-sky-50`}
           />
           <button
             className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600"
@@ -248,7 +293,6 @@ const CommunityManagement = () => {
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Subject</th>
                   <th className="px-5 py-3">Topic</th>
-                  <th className="px-5 py-3">Members</th>
                   <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -261,7 +305,6 @@ const CommunityManagement = () => {
                     </td>
                     <td className="px-5 py-4 text-slate-600">{channel.subject}</td>
                     <td className="px-5 py-4 text-slate-600">{channel.topic || "-"}</td>
-                    <td className="px-5 py-4 text-slate-600">{channel.memberCount || 0}</td>
                     <td className="px-5 py-4 text-right">
                       <div className="inline-flex items-center gap-2">
                         <button
@@ -295,7 +338,7 @@ const CommunityManagement = () => {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <select
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${selectClasses} w-48`}
                 value={selectedChannelId}
                 onChange={(event) => {
                   setSelectedChannelId(event.target.value);
@@ -342,11 +385,11 @@ const CommunityManagement = () => {
                 <tbody>
                   {announcements.map((announcement) => (
                     <tr key={announcement._id} className="border-t border-slate-100">
-                      <td className="px-4 py-3 font-semibold text-slate-800">
+                      <td className="px-4 py-3 font-semibold text-slate-800 align-top">
                         {announcement.title || "(No title)"}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 line-clamp-1">
-                        {announcement.content}
+                      <td className="px-4 py-3 text-slate-600 whitespace-pre-line break-words">
+                        {announcement.content || "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-2">
@@ -401,17 +444,19 @@ const CommunityManagement = () => {
                 <label className="text-xs font-semibold text-slate-600">
                   Name *
                   <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={`${inputClasses} mt-1`}
                     value={form.name}
                     onChange={(event) => setForm({ ...form, name: event.target.value })}
+                    placeholder="e.g., Data Structures"
                   />
                 </label>
                 <label className="text-xs font-semibold text-slate-600">
                   Topic *
                   <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={`${inputClasses} mt-1`}
                     value={form.topic}
                     onChange={(event) => setForm({ ...form, topic: event.target.value })}
+                    placeholder="e.g., Trees & Graphs"
                   />
                 </label>
               </div>
@@ -419,9 +464,10 @@ const CommunityManagement = () => {
               <label className="text-xs font-semibold text-slate-600">
                 Subject *
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className={`${inputClasses} mt-1`}
                   value={form.subject}
                   onChange={(event) => setForm({ ...form, subject: event.target.value })}
+                  placeholder="e.g., Algorithm Design"
                 />
               </label>
 
@@ -429,7 +475,7 @@ const CommunityManagement = () => {
                 Description *
                 <textarea
                   rows="3"
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className={`${textAreaClasses} mt-1`}
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
                 />
@@ -437,28 +483,9 @@ const CommunityManagement = () => {
 
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="text-xs font-semibold text-slate-600">
-                  Icon URL
-                  <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    value={form.icon}
-                    onChange={(event) => setForm({ ...form, icon: event.target.value })}
-                  />
-                </label>
-                <label className="text-xs font-semibold text-slate-600">
-                  Cover Image URL
-                  <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    value={form.coverImage}
-                    onChange={(event) => setForm({ ...form, coverImage: event.target.value })}
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="text-xs font-semibold text-slate-600">
                   Lecturer Name
                   <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={`${inputClasses} mt-1`}
                     value={form.expertName}
                     onChange={(event) => setForm({ ...form, expertName: event.target.value })}
                     placeholder="e.g., Dr. Silva"
@@ -467,7 +494,7 @@ const CommunityManagement = () => {
                 <label className="text-xs font-semibold text-slate-600">
                   Lecturer Position
                   <input
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className={`${inputClasses} mt-1`}
                     value={form.expertTitle}
                     onChange={(event) => setForm({ ...form, expertTitle: event.target.value })}
                     placeholder="e.g., Senior Lecturer"
@@ -512,7 +539,7 @@ const CommunityManagement = () => {
               <label className="text-xs font-semibold text-slate-600">
                 Title
                 <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className={`${inputClasses} mt-1`}
                   value={announcementForm.title}
                   onChange={(event) => setAnnouncementForm({ ...announcementForm, title: event.target.value })}
                 />
@@ -522,7 +549,7 @@ const CommunityManagement = () => {
                 Content *
                 <textarea
                   rows="4"
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className={`${textAreaClasses} mt-1`}
                   value={announcementForm.content}
                   onChange={(event) => setAnnouncementForm({ ...announcementForm, content: event.target.value })}
                 />
