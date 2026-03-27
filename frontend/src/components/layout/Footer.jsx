@@ -11,43 +11,43 @@ const socialLinks = [
 
 const Footer = () => {
 	return (
-		<footer className="border-t border-slate-200 bg-slate-900 text-slate-200">
+		<footer className="border-t border-indigo-300/20 bg-gradient-to-r from-indigo-700 via-violet-700 to-purple-700 text-indigo-100">
 			<div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-4">
 				<div>
 					<div className="flex items-center gap-2">
-						<span className="rounded-lg bg-primary px-2 py-1 text-xs font-bold text-white">
+						<span className="rounded-lg bg-white px-2 py-1 text-xs font-bold text-indigo-700">
 							EF
 						</span>
 						<h3 className="text-xl font-bold">EduFlow LMS</h3>
 					</div>
-					<p className="mt-4 text-sm text-slate-400">
+					<p className="mt-4 text-sm text-indigo-100">
 						Empowering every learner with structured pathways, interactive
 						experiences, and measurable outcomes.
 					</p>
 				</div>
 
 				<div>
-					<h4 className="text-sm font-semibold uppercase tracking-wider text-slate-100">
+					<h4 className="text-sm font-semibold uppercase tracking-wider text-white">
 						Quick Links
 					</h4>
-					<ul className="mt-4 space-y-2 text-sm text-slate-300">
+					<ul className="mt-4 space-y-2 text-sm text-indigo-100">
 						<li>
-							<Link className="hover:text-white" to="/">
+							<Link className="hover:text-yellow-200" to="/">
 								Home
 							</Link>
 						</li>
 						<li>
-							<Link className="hover:text-white" to="/dashboard">
+							<Link className="hover:text-yellow-200" to="/dashboard">
 								Courses
 							</Link>
 						</li>
 						<li>
-							<Link className="hover:text-white" to="/dashboard">
+							<Link className="hover:text-yellow-200" to="/dashboard">
 								Dashboard
 							</Link>
 						</li>
 						<li>
-							<Link className="hover:text-white" to="/community">
+							<Link className="hover:text-yellow-200" to="/community">
 								Community
 							</Link>
 						</li>
@@ -55,10 +55,10 @@ const Footer = () => {
 				</div>
 
 				<div>
-					<h4 className="text-sm font-semibold uppercase tracking-wider text-slate-100">
+					<h4 className="text-sm font-semibold uppercase tracking-wider text-white">
 						Departments
 					</h4>
-					<ul className="mt-4 space-y-2 text-sm text-slate-300">
+					<ul className="mt-4 space-y-2 text-sm text-indigo-100">
 						<li>Information Technology</li>
 						<li>Data Science</li>
 						<li>Software Engineering</li>
@@ -66,12 +66,12 @@ const Footer = () => {
 				</div>
 
 				<div>
-					<h4 className="text-sm font-semibold uppercase tracking-wider text-slate-100">
+					<h4 className="text-sm font-semibold uppercase tracking-wider text-white">
 						Contact
 					</h4>
 					<a
 						href="mailto:support@eduflow.com"
-						className="mt-4 inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white"
+						className="mt-4 inline-flex items-center gap-2 text-sm text-indigo-100 hover:text-yellow-200"
 					>
 						<Mail size={16} />
 						support@eduflow.com
@@ -82,7 +82,7 @@ const Footer = () => {
 								key={label}
 								href={href}
 								aria-label={label}
-								className="rounded-lg border border-slate-700 p-2 text-slate-300 transition hover:border-slate-500 hover:text-white"
+								className="rounded-lg border border-white/25 p-2 text-indigo-100 transition hover:border-yellow-300 hover:text-yellow-200"
 							>
 								<Icon size={16} />
 							</a>
@@ -91,7 +91,7 @@ const Footer = () => {
 				</div>
 			</div>
 
-			<div className="border-t border-slate-800 py-5 text-center text-sm text-slate-400">
+			<div className="border-t border-white/20 py-5 text-center text-sm text-indigo-100">
 				© 2024 EduFlow LMS. All rights reserved.
 			</div>
 		</footer>
