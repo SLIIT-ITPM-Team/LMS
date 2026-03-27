@@ -31,6 +31,8 @@ exports.createPost = async (req, res) => {
       });
     }
 
+    const channelName = channel.name?.trim() || 'this channel';
+
     // Check permissions
     if (type === 'announcement' && req.user.role !== 'admin') {
       return res.status(403).json({
@@ -71,14 +73,23 @@ exports.createPost = async (req, res) => {
       recipients = channelMembers?.members || [];
     }
 
+    const actorDisplayName = req.user.name || (type === 'announcement' ? 'Admin' : 'User');
+    const trimmedTitle = title?.trim();
+    const announcementTitle = trimmedTitle || 'Announcement';
+    const postTitle = trimmedTitle || 'Post';
+    const notificationTitle = type === 'announcement' ? announcementTitle : 'New Post';
+    const notificationMessage = type === 'announcement'
+      ? `${channelName} • ${actorDisplayName} posted this announcement.`
+      : `${actorDisplayName} posted in ${channelName}: "${postTitle}"`;
+
     const notifications = recipients
       .filter((memberId) => memberId.toString() !== req.user._id.toString())
       .map((memberId) => ({
         recipient: memberId,
         actor: req.user._id,
         type: notificationType,
-        title: type === 'announcement' ? 'New Announcement' : 'New Post',
-        message: `${req.user.name || 'User'} posted: "${title}"`,
+        title: notificationTitle,
+        message: notificationMessage,
         relatedPost: newPost._id,
         relatedChannel: channelId,
         actionUrl: `/community/channel/${channelId}/post/${newPost._id}`,
@@ -197,6 +208,9 @@ exports.updatePost = async (req, res) => {
         message: 'Post not found',
       });
     }
+
+    const channel = await Channel.findById(post.channel).select('name');
+    const channelName = channel?.name || 'this channel';
 
     // Check authorization
     if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
@@ -321,7 +335,7 @@ exports.likePost = async (req, res) => {
         actor: userId,
         type: 'post_liked',
         title: 'Post Liked',
-        message: `${req.user.name || 'User'} liked your post`,
+        message: `${req.user.name || 'User'} liked your post in ${channelName}`,
         relatedPost: postId,
         actionUrl: `/community/post/${postId}`,
       });
