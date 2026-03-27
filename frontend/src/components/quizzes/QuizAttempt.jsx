@@ -1,139 +1,120 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import theme from '../theme';
 
-const AddSummary = () => {
+const initialForm = {
+  summary: '',
+  email: ''
+};
+
+const QuizAttempt = () => {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState('');
-  const [loading, setLoading] = useState(false);
+
+  const [form, setForm] = useState(initialForm);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
-  const handleGenerate = async () => {
-    if (!summary.trim()) {
-      setError('Please enter a summary first.');
+  const canGenerate = useMemo(() => {
+    return form.summary.trim().length >= 60;
+  }, [form.summary]);
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setForm((previous) => ({
+      ...previous,
+      [name]: value
+    }));
+  };
+
+  const handleGenerateQuiz = async () => {
+    if (!canGenerate) {
+      setError('Please enter a richer summary with at least 60 characters.');
       return;
     }
 
     try {
-      setLoading(true);
+      setIsGenerating(true);
       setError('');
+
       const response = await api.post('/api/quiz/from-summary', {
-        summary: summary.trim(),
+        summary: form.summary.trim()
       });
-      navigate(`/quiz/${response.data._id}/quits`);
-    } catch (err) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.request) {
-        setError('Cannot reach backend server. Please start backend and try again.');
-      } else {
-        setError('Failed to generate quiz from summary.');
+
+      const quizId = response.data?._id || response.data?.quiz?._id;
+      if (!quizId) {
+        throw new Error('Quiz creation succeeded but no quiz id was returned.');
       }
+
+      if (form.email.trim()) {
+        localStorage.setItem('quiz_user_email', form.email.trim().toLowerCase());
+      }
+
+      navigate(`/quiz/${quizId}/quits`);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || requestError.message || 'Failed to generate quiz.');
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: `linear-gradient(145deg, ${theme.givry} 0%, #ffffff 55%, ${theme.givry} 100%)`,
-        padding: '28px 16px'
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 840,
-          margin: '0 auto',
-          background: '#fff',
-          borderRadius: 18,
-          padding: 28,
-          border: `1px solid ${theme.givry}`,
-          boxShadow: '0 14px 40px rgba(5,54,104,0.12)'
-        }}
-      >
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={{ margin: 0, fontSize: 30, color: theme.teal, letterSpacing: 0.2 }}>Add Summary</h1>
-          <p style={{ marginTop: 8, color: '#6b7280', fontSize: 15 }}>
-            Paste your summary and generate 10 quizzes.
+    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 md:px-8">
+      <div className="mx-auto w-full max-w-3xl">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl md:p-8">
+          <h1 className="text-2xl font-bold md:text-3xl">Generate Contextual Quiz</h1>
+          <p className="mt-2 text-sm text-slate-600 md:text-base">
+            Enter a summary and generate 10 balanced questions with contextual options and validated answers.
           </p>
-        </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label style={{ display: 'block', marginBottom: 10, fontWeight: 700, color: theme.teal }}>Summary</label>
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={12}
-            placeholder="Paste the summary text here..."
-            style={{
-              width: '100%',
-              padding: 14,
-              border: `1px solid ${theme.givry}`,
-              borderRadius: 12,
-              fontSize: 15,
-              resize: 'vertical',
-              outline: 'none',
-              background: '#fffdf5'
-            }}
-          />
-        </div>
+          <div className="mt-6 space-y-4">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">User Email (optional prefill)</span>
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleInputChange}
+                placeholder="student@example.com"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-0 transition focus:border-cyan-400"
+              />
+            </label>
 
-        {error && (
-          <p
-            style={{
-              marginTop: 12,
-              color: '#b91c1c',
-              background: '#fff1f2',
-              border: '1px solid #fecdd3',
-              borderRadius: 10,
-              padding: '10px 12px',
-              fontWeight: 600
-            }}
-          >
-            {error}
-          </p>
-        )}
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-slate-700">Summary</span>
+              <textarea
+                name="summary"
+                value={form.summary}
+                onChange={handleInputChange}
+                rows={12}
+                placeholder="Paste or type a detailed summary..."
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
+              />
+            </label>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            style={{
-              padding: '12px 18px',
-              borderRadius: 10,
-              border: 'none',
-              background: theme.teal,
-              color: '#fff',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: 14,
-              boxShadow: '0 8px 20px rgba(5,54,104,0.25)'
-            }}
-          >
-            {loading ? 'Generating...' : 'Generate 10 Quiz'}
-          </button>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              padding: '12px 18px',
-              borderRadius: 10,
-              border: `1px solid ${theme.teal}`,
-              background: '#fff',
-              color: theme.teal,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: 14
-            }}
-          >
-            Back
-          </button>
-        </div>
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span>{form.summary.trim().length} characters</span>
+              <span>{canGenerate ? 'Ready' : 'Minimum 60 characters'}</span>
+            </div>
+
+            {error ? (
+              <div className="rounded-xl border border-rose-300/60 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={handleGenerateQuiz}
+              disabled={isGenerating || !canGenerate}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isGenerating ? 'Generating Quiz...' : 'Generate 10 Questions'}
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
 };
 
-export default AddSummary;
+export default QuizAttempt;
