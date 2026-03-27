@@ -131,41 +131,51 @@ const CommunityHub = () => {
   return (
     <div className="community-hub-container" id="community">
       <div className="community-main-content">
-        <main className="community-main-area">
-          <div className="channel-strip">
-            <div className="channel-strip-header">
-              <div>
-                <h3>Channels</h3>
-                <p>Select a channel to view posts.</p>
-              </div>
-              <input
-                type="text"
-                className="channel-search"
-                placeholder="Search channels"
-                value={channelSearch}
-                onChange={(event) => setChannelSearch(event.target.value)}
-              />
+        <aside className="channel-strip">
+          <div className="channel-strip-header">
+            <div>
+              <h3>Channels</h3>
+              <p>Select a channel to view posts.</p>
             </div>
-            <div className="channel-strip-list">
-              {visibleChannels.length === 0 ? (
-                <div className="empty-state">No channels yet</div>
-              ) : (
-                visibleChannels.map((channel) => (
-                  <button
-                    key={channel._id}
-                    type="button"
-                    className={`channel-pill ${
-                      selectedChannel?._id === channel._id ? "active" : ""
-                    }`}
-                    onClick={() => handleSelectChannel(channel)}
-                  >
-                    <span className="channel-pill-title">{channel.name}</span>
-                    <span className="channel-pill-meta">{channel.subject}</span>
-                  </button>
-                ))
-              )}
-            </div>
+            <input
+              type="text"
+              className="channel-search"
+              placeholder="Search channels"
+              aria-label="Search channels"
+              value={channelSearch}
+              onChange={(event) => setChannelSearch(event.target.value)}
+            />
           </div>
+          <div className="channel-strip-list">
+            {visibleChannels.length === 0 ? (
+              <div className="empty-state">No channels yet</div>
+            ) : (
+              visibleChannels.map((channel) => (
+                <button
+                  key={channel._id}
+                  type="button"
+                  className={`channel-pill ${
+                    selectedChannel?._id === channel._id ? "active" : ""
+                  }`}
+                  onClick={() => handleSelectChannel(channel)}
+                >
+                  <div className="channel-pill-header">
+                    <div className="channel-pill-text">
+                      <span className="channel-pill-title">{channel.name}</span>
+                      <span className="channel-pill-meta">{channel.subject}</span>
+                    </div>
+                  </div>
+                  {channel.description && (
+                    <p className="channel-pill-description">
+                      {channel.description}
+                    </p>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </aside>
+        <main className="community-main-area">
           {selectedChannel ? (
             <>
               <div className="channel-header">
@@ -210,6 +220,14 @@ const CommunityHub = () => {
                 searchQuery={searchQuery}
                 onAnnouncementsRemoved={(removedIds) =>
                   setPosts((prev) => prev.filter((post) => !removedIds.includes(post._id)))
+                }
+                onPostUpdated={(updatedPost) =>
+                  setPosts((prev) =>
+                    prev.map((post) => (post._id === updatedPost._id ? updatedPost : post))
+                  )
+                }
+                onPostDeleted={(deletedId) =>
+                  setPosts((prev) => prev.filter((post) => post._id !== deletedId))
                 }
                 socket={socket}
               />
@@ -438,29 +456,31 @@ const PostCard = ({ post, user, socket, onDelete }) => {
       </div>
 
       <div className="post-stats">
-        <span>❤️ {likeCount}</span>
-        <span>💬 {comments.length}</span>
+        <span>❤️ {likeCount} likes</span>
+        <span>💬 {comments.length} comments</span>
       </div>
 
       <div className="post-actions">
         <button
-          className={`action-btn ${isLiked ? "liked" : ""}`}
+          className={`action-btn action-like ${isLiked ? "liked" : ""}`}
           onClick={handleLike}
+          type="button"
         >
           {isLiked ? "❤️" : "🤍"} Like
         </button>
         <button
-          className="action-btn"
+          className={`action-btn action-comment ${showComments ? "active" : ""}`}
           onClick={() => {
             setShowComments((prev) => !prev);
             if (!showComments && comments.length === 0) {
               fetchComments();
             }
           }}
+          type="button"
         >
           💬 Comment
         </button>
-        <button className="action-btn" type="button">🔗 Share</button>
+        <button className="action-btn action-share" type="button">🔗 Share</button>
       </div>
 
       {showComments && (
@@ -669,8 +689,11 @@ const CreatePostModal = ({ channelId, onClose, onPostCreated, userRole }) => {
     event.preventDefault();
     setError("");
 
-    if (!formData.content) {
-      setError("Content is required");
+    const title = formData.title.trim();
+    const content = formData.content.trim();
+
+    if (!title || !content) {
+      setError("Title and content are required");
       return;
     }
 
@@ -678,11 +701,15 @@ const CreatePostModal = ({ channelId, onClose, onPostCreated, userRole }) => {
       setLoading(true);
       const response = await api.post("/api/community/posts", {
         ...formData,
+        title,
+        content,
         channelId,
       });
 
       if (response.data.success) {
-        onPostCreated(response.data.data);
+        onPostCreated?.(response.data.data);
+        setFormData({ title: "", content: "", type: formData.type });
+        onClose();
       }
     } catch (error) {
       setError(error.response?.data?.message || "Error creating post");
@@ -735,7 +762,7 @@ const CreatePostModal = ({ channelId, onClose, onPostCreated, userRole }) => {
           )}
 
           <div className="form-group">
-            <label>Title</label>
+            <label>Title *</label>
             <input
               type="text"
               value={formData.title}
@@ -760,7 +787,13 @@ const CreatePostModal = ({ channelId, onClose, onPostCreated, userRole }) => {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                loading || !formData.title.trim() || !formData.content.trim()
+              }
+            >
               {loading ? "Posting..." : "Post"}
             </button>
             <button type="button" className="btn btn-secondary" onClick={onClose}>

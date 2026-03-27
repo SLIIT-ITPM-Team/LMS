@@ -174,6 +174,15 @@ exports.createPost = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Only admins can create announcements' });
     }
 
+    const channel = await Channel.findById(channelId).select('name');
+    if (!channel) {
+      return res.status(404).json({ success: false, message: 'Channel not found' });
+    }
+
+    const channelName = channel.name?.trim() || 'this channel';
+    const announcementTitle = (title && title.trim()) || 'Announcement';
+    const announcementActor = req.user.name || 'Admin';
+
     const post = await Post.create({
       channel: channelId,
       author: req.user._id,
@@ -191,8 +200,8 @@ exports.createPost = async (req, res) => {
           recipient: u._id,
           actor: req.user._id,
           type: 'announcement_created',
-          title: 'New Announcement',
-          message: `${req.user.name || 'Admin'} posted: "${title || 'Announcement'}"`,
+          title: announcementTitle,
+          message: `${channelName} • ${announcementActor} posted this announcement.`,
           relatedPost: post._id,
           relatedChannel: channelId,
           actionUrl: `/community`,

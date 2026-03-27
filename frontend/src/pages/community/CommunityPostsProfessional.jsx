@@ -2,6 +2,31 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../api/axios";
 import "./CommunityPostsProfessional.css";
 
+const getMessageKey = (message) => {
+  if (!message) return null;
+  return (
+    message._id ||
+    message.id ||
+    `${message.author?._id || message.author || "anon"}-${message.createdAt || Math.random()}`
+  );
+};
+
+const dedupeMessages = (messages = []) => {
+  const map = new Map();
+  messages.forEach((message) => {
+    const key = getMessageKey(message);
+    if (!key) return;
+    map.set(key, message);
+  });
+  return Array.from(map.values());
+};
+
+const getCommentCountFromPost = (post) => {
+  const value = post?.commentCount ?? post?.comments?.length ?? 0;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
 const CommunityPostsProfessional = ({
   channelId,
   posts,
@@ -10,10 +35,11 @@ const CommunityPostsProfessional = ({
   sme,
   searchQuery = "",
   onAnnouncementsRemoved,
+  onPostUpdated,
+  onPostDeleted,
   socket,
 }) => {
   const [filterType, setFilterType] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
   const [hoveredPost, setHoveredPost] = useState(null);
   const [expandedPost, setExpandedPost] = useState(null);
   const [removingAnnouncements, setRemovingAnnouncements] = useState(false);
@@ -24,7 +50,6 @@ const CommunityPostsProfessional = ({
 
   useEffect(() => {
     setFilterType("all");
-    setSortBy("newest");
     setHoveredPost(null);
     setExpandedPost(null);
     setDiscussionMessages([]);
@@ -33,25 +58,25 @@ const CommunityPostsProfessional = ({
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
+  const nonAnnouncementPosts = useMemo(
+    () => posts.filter((post) => post.type !== "announcement"),
+    [posts]
+  );
+
   const filteredPosts = useMemo(() => {
-    const base = filterType === "all" ? posts : posts.filter((post) => post.type === filterType);
+    const base =
+      filterType === "all"
+        ? nonAnnouncementPosts
+        : posts.filter((post) => post.type === filterType);
     if (!normalizedQuery) return base;
     return base.filter((post) =>
       `${post.title || ""} ${post.content || ""}`.toLowerCase().includes(normalizedQuery)
     );
-  }, [posts, filterType, normalizedQuery]);
+  }, [posts, nonAnnouncementPosts, filterType, normalizedQuery]);
 
   const sortedPosts = useMemo(() => {
-    const nextPosts = [...filteredPosts];
-    if (sortBy === "newest") {
-      nextPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (sortBy === "mostLiked") {
-      nextPosts.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (sortBy === "mostViewed") {
-      nextPosts.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
-    }
-    return nextPosts;
-  }, [filteredPosts, sortBy]);
+    return [...filteredPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [filteredPosts]);
 
   const chatMessages = useMemo(() => {
     if (filterType !== "post") return [];
@@ -59,7 +84,7 @@ const CommunityPostsProfessional = ({
   }, [discussionMessages, filterType]);
 
   const filterTabs = [
-    { id: "all", label: "All Posts", icon: "📝", count: posts.length },
+    { id: "all", label: "All Posts", icon: "📝", count: nonAnnouncementPosts.length },
     {
       id: "announcement",
       label: "Announcements",
@@ -110,7 +135,7 @@ const CommunityPostsProfessional = ({
       setDiscussionLoading(true);
       const response = await api.get(`/api/community/channels/${channelId}/discussions`);
       if (response.data.success) {
-        setDiscussionMessages(response.data.data || []);
+        setDiscussionMessages(dedupeMessages(response.data.data || []));
       }
     } catch (error) {
       console.error("Error loading discussion messages:", error);
@@ -128,7 +153,7 @@ const CommunityPostsProfessional = ({
       });
 
       if (response.data.success) {
-        setDiscussionMessages((prev) => [...prev, response.data.data]);
+        setDiscussionMessages((prev) => dedupeMessages([...prev, response.data.data]));
         setMessageText("");
       }
     } catch (error) {
@@ -148,9 +173,7 @@ const CommunityPostsProfessional = ({
     if (!socket) return;
     const handleDiscussionNew = ({ channelId: incomingChannelId, message }) => {
       if (!incomingChannelId || incomingChannelId !== channelId) return;
-      setDiscussionMessages((prev) =>
-        prev.some((item) => item._id === message._id) ? prev : [...prev, message]
-      );
+      setDiscussionMessages((prev) => dedupeMessages([...prev, message]));
     };
 
     socket.on("discussion:new", handleDiscussionNew);
@@ -163,15 +186,6 @@ const CommunityPostsProfessional = ({
     <div className="community-posts-professional">
       <div className="posts-header">
         <div className="header-controls">
-          <select
-            value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
-            className="sort-selector"
-          >
-            <option value="newest">🕐 Newest First</option>
-            <option value="mostLiked">❤️ Most Liked</option>
-            <option value="mostViewed">👁️ Most Viewed</option>
-          </select>
           {isAdmin && (
             <button
               type="button"
@@ -296,6 +310,7 @@ const CommunityPostsProfessional = ({
             sortedPosts.map((post) => (
               <PostCardProfessional
                 key={post._id}
+                channelId={channelId}
                 post={post}
                 user={user}
                 sme={sme}
@@ -303,6 +318,8 @@ const CommunityPostsProfessional = ({
                 isExpanded={expandedPost === post._id}
                 onHover={setHoveredPost}
                 onExpand={setExpandedPost}
+                onPostUpdated={onPostUpdated}
+                onPostDeleted={onPostDeleted}
               />
             ))
           )}
@@ -313,6 +330,7 @@ const CommunityPostsProfessional = ({
 };
 
 const PostCardProfessional = ({
+  channelId,
   post,
   user,
   sme,
@@ -320,6 +338,8 @@ const PostCardProfessional = ({
   isExpanded,
   onHover,
   onExpand,
+  onPostUpdated,
+  onPostDeleted,
 }) => {
   const [isLiked, setIsLiked] = useState(
     post.likes?.some((id) => id === user?._id || id?._id === user?._id) || false
@@ -329,12 +349,28 @@ const PostCardProfessional = ({
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.title || "");
+  const [editContent, setEditContent] = useState(post.content || "");
+  const [editError, setEditError] = useState("");
+  const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const computeCommentCount = () => {
+    const value = post.commentCount ?? post.comments?.length ?? 0;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  };
+  const [commentCountState, setCommentCountState] = useState(() =>
+    getCommentCountFromPost(post)
+  );
 
   const authorName =
     post.author?.name ||
     [post.author?.firstName, post.author?.lastName].filter(Boolean).join(" ") ||
     "User";
   const authorInitial = authorName?.[0]?.toUpperCase() || "U";
+  const content = post.content || "";
+  const tags = post.tags || [];
 
   const getTimeAgo = (date) => {
     const now = new Date();
@@ -348,6 +384,15 @@ const PostCardProfessional = ({
 
     return postDate.toLocaleDateString();
   };
+
+  useEffect(() => {
+    setEditTitle(post.title || "");
+    setEditContent(post.content || "");
+  }, [post._id, post.title, post.content]);
+
+  useEffect(() => {
+    setCommentCountState(getCommentCountFromPost(post));
+  }, [post._id, post.commentCount, post.comments]);
 
   const handleLike = async () => {
     try {
@@ -368,6 +413,7 @@ const PostCardProfessional = ({
       const response = await api.get(`/api/community/posts/${post._id}/comments`);
       if (response.data.success) {
         setComments(response.data.data);
+        setCommentCountState(response.data.data?.length || 0);
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -390,6 +436,7 @@ const PostCardProfessional = ({
             ? prev
             : [response.data.data, ...prev]
         );
+        setCommentCountState((prev) => prev + 1);
         setNewComment("");
         setReplyTo(null);
       }
@@ -404,7 +451,81 @@ const PostCardProfessional = ({
 
   const isSMEAuthor = sme?._id === post.author?._id || sme?.email === post.author?.email;
   const isAdmin = user?.role === "admin";
-  const commentCount = comments.length || post.commentCount || 0;
+  const isAuthor =
+    post.author?._id?.toString?.() === user?._id?.toString?.() ||
+    post.author === user?._id;
+  const isOwner = isAuthor || isAdmin;
+  const commentCount = commentCountState;
+  const hasLongContent = content.length > 150;
+
+  const handleUpdate = async () => {
+    if (!editTitle.trim()) {
+      setEditError("Title is required");
+      return;
+    }
+    if (!editContent.trim()) {
+      setEditError("Content is required");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      const response = await api.put(`/api/community/posts/${post._id}`, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+      });
+      const updatedPost = response.data?.data ?? {
+        ...post,
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        isEdited: true,
+      };
+      onPostUpdated?.(updatedPost);
+      setIsEditing(false);
+      setEditError("");
+    } catch (error) {
+      console.error("Error updating post:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this post?")) return;
+    try {
+      setDeleting(true);
+      await api.delete(`/api/community/posts/${post._id}`);
+      onPostDeleted?.(post._id);
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditTitle(post.title || "");
+    setEditContent(post.content || "");
+    setEditError("");
+  };
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const targetChannelId = channelId || post.channel?._id || "";
+    const shareUrl = `${window.location.origin}/community?channel=${targetChannelId}&post=${post._id}`;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        window.alert?.("Post link copied to clipboard");
+      } else {
+        throw new Error("Clipboard unavailable");
+      }
+    } catch (error) {
+      console.error("Error copying post link:", error);
+      window.prompt?.("Copy this post link", shareUrl);
+    }
+  };
 
   return (
     <div
@@ -416,8 +537,7 @@ const PostCardProfessional = ({
     >
       {post.type === "announcement" && (
         <div className="announcement-badge-premium">
-          <span className="badge-icon">📢</span>
-          <span className="badge-text">ANNOUNCEMENT</span>
+          <span className="badge-text">📢 ANNOUNCEMENT</span>
         </div>
       )}
 
@@ -444,59 +564,126 @@ const PostCardProfessional = ({
         </div>
 
         <div className="post-actions-menu">
-          <button className="action-menu-btn" title="More options" type="button">
-            ⋯
-          </button>
+          {isOwner ? (
+            isEditing ? (
+              <button
+                className="owner-action-btn"
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={updating}
+              >
+                Cancel
+              </button>
+            ) : (
+              <>
+                <button
+                  className="owner-action-btn"
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="owner-action-btn danger"
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </>
+            )
+          ) : (
+            <button className="action-menu-btn" title="More options" type="button">
+              ⋯
+            </button>
+          )}
         </div>
       </div>
 
       <div className="post-content-premium">
-        <h3 className="post-title">{post.title}</h3>
-        <p className="post-body">
-          {isExpanded ? post.content : post.content.substring(0, 150)}
-          {post.content.length > 150 && !isExpanded && "..."}
-        </p>
-
-        {post.content.length > 150 && (
-          <button
-            className="read-more-btn"
-            onClick={() => onExpand(isExpanded ? null : post._id)}
-            type="button"
-          >
-            {isExpanded ? "Show Less" : "Read More"}
-          </button>
-        )}
-
-        {post.tags && post.tags.length > 0 && (
-          <div className="post-tags-premium">
-            {post.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="tag-premium">
-                #{tag}
-              </span>
-            ))}
-            {post.tags.length > 3 && (
-              <span className="tag-more">+{post.tags.length - 3}</span>
-            )}
+        {isEditing ? (
+          <div className="post-edit-form">
+            <input
+              type="text"
+              className="edit-input"
+              placeholder="Title (optional)"
+              value={editTitle}
+              onChange={(event) => {
+                setEditTitle(event.target.value);
+                setEditError("");
+              }}
+            />
+            <textarea
+              className="edit-textarea"
+              placeholder="What would you like to share?"
+              value={editContent}
+              onChange={(event) => {
+                setEditContent(event.target.value);
+                setEditError("");
+              }}
+              rows={4}
+            />
+            {editError && <p className="edit-error">{editError}</p>}
+            <div className="edit-actions">
+              <button
+                type="button"
+                className="owner-action-btn primary"
+                onClick={handleUpdate}
+                disabled={updating}
+              >
+                {updating ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                className="owner-action-btn"
+                onClick={handleCancelEdit}
+                disabled={updating}
+              >
+                Discard
+              </button>
+            </div>
           </div>
+        ) : (
+          <>
+            {post.title && <h3 className="post-title">{post.title}</h3>}
+            <p className="post-body">
+              {isExpanded ? content : content.substring(0, 150)}
+              {hasLongContent && !isExpanded && "..."}
+            </p>
+
+            {hasLongContent && (
+              <button
+                className="read-more-btn"
+                onClick={() => onExpand(isExpanded ? null : post._id)}
+                type="button"
+              >
+                {isExpanded ? "Show Less" : "Read More"}
+              </button>
+            )}
+
+            {tags.length > 0 && (
+              <div className="post-tags-premium">
+                {tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="tag-premium">
+                    #{tag}
+                  </span>
+                ))}
+                {tags.length > 3 && <span className="tag-more">+{tags.length - 3}</span>}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <div className="post-stats-premium">
-        <div className="stat-item">
-          <span className="stat-icon">❤️</span>
-          <span className="stat-value">{likeCount}</span>
-          <span className="stat-label">Likes</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">💬</span>
-          <span className="stat-value">{commentCount}</span>
-          <span className="stat-label">Comments</span>
-        </div>
+        <span>❤️ {likeCount} likes</span>
+        <span>💬 {commentCount} comments</span>
       </div>
 
       <div className="post-actions-premium">
         <button
-          className={`action-btn ${isLiked ? "active" : ""}`}
+          className={`action-btn action-like ${isLiked ? "active" : ""}`}
           onClick={handleLike}
           type="button"
         >
@@ -505,7 +692,7 @@ const PostCardProfessional = ({
         </button>
 
         <button
-          className={`action-btn ${showComments ? "active" : ""}`}
+          className={`action-btn action-comment ${showComments ? "active" : ""}`}
           onClick={() => {
             setShowComments((prev) => !prev);
             if (!showComments && comments.length === 0) {
@@ -515,10 +702,10 @@ const PostCardProfessional = ({
           type="button"
         >
           <span className="action-icon">💬</span>
-          <span className="action-text">Comment</span>
+          <span className="action-text">Comment ({commentCount})</span>
         </button>
 
-        <button className="action-btn" type="button">
+        <button className="action-btn action-share" type="button" onClick={handleShare}>
           <span className="action-icon">🔗</span>
           <span className="action-text">Share</span>
         </button>
@@ -598,10 +785,8 @@ const PostCardProfessional = ({
         </div>
       )}
 
-      {post.isEdited && (
-        <div className="edited-indicator">
-          edited {new Date(post.editedAt).toLocaleDateString()}
-        </div>
+      {post.isEdited && post.editedAt && (
+        <div className="edited-indicator">edited {new Date(post.editedAt).toLocaleDateString()}</div>
       )}
     </div>
   );
