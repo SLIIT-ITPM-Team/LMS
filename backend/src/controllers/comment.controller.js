@@ -1,11 +1,18 @@
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
+const Channel = require('../models/Channel');
 const Notification = require('../models/Notification');
 
 const emitToPost = (req, postId, event, payload) => {
   if (!req.io && !global.io) return;
   const io = req.io || global.io;
   io.to(`post-${postId}`).emit(event, payload);
+};
+
+const getChannelName = async (channelId) => {
+  if (!channelId) return 'this channel';
+  const channel = await Channel.findById(channelId).select('name');
+  return channel?.name || 'this channel';
 };
 
 // Create comment on post
@@ -29,6 +36,8 @@ exports.createComment = async (req, res) => {
       });
     }
 
+    const channelName = await getChannelName(post.channel);
+
     const newComment = new Comment({
       content,
       post: postId,
@@ -50,7 +59,7 @@ exports.createComment = async (req, res) => {
         actor: req.user._id,
         type: 'comment_added',
         title: 'New Comment',
-        message: `${req.user.name || 'User'} commented on your post`,
+        message: `${req.user.name || 'User'} commented on your post in ${channelName}`,
         relatedPost: postId,
         relatedComment: newComment._id,
         actionUrl: `/community/post/${postId}`,
@@ -100,6 +109,16 @@ exports.replyToComment = async (req, res) => {
       });
     }
 
+    const parentPost = await Post.findById(parentComment.post);
+    if (!parentPost) {
+      return res.status(404).json({
+        success: false,
+        message: 'Parent post not found',
+      });
+    }
+
+    const channelName = await getChannelName(parentPost.channel);
+
     const newReply = new Comment({
       content,
       post: parentComment.post,
@@ -124,7 +143,7 @@ exports.replyToComment = async (req, res) => {
         actor: req.user._id,
         type: 'comment_replied',
         title: 'New Reply',
-        message: `${req.user.name || 'User'} replied to your comment`,
+        message: `${req.user.name || 'User'} replied to your comment in ${channelName}`,
         relatedPost: parentComment.post,
         relatedComment: newReply._id,
         actionUrl: `/community/post/${parentComment.post}`,
@@ -243,6 +262,16 @@ exports.updateComment = async (req, res) => {
         message: 'Comment not found',
       });
     }
+
+    const post = await Post.findById(comment.post);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found',
+      });
+    }
+
+    const channelName = await getChannelName(post.channel);
 
     if (comment.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({
@@ -365,7 +394,7 @@ exports.likeComment = async (req, res) => {
         actor: userId,
         type: 'comment_liked',
         title: 'Comment Liked',
-        message: `${req.user.name || 'User'} liked your comment`,
+        message: `${req.user.name || 'User'} liked your comment in ${channelName}`,
         relatedPost: comment.post,
         relatedComment: commentId,
         actionUrl: `/community/post/${comment.post}`,
