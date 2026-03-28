@@ -1,180 +1,75 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import CountUp from "react-countup";
-import { useInView } from "react-intersection-observer";
 import {
   ArrowRight,
-  BellRing,
   BookOpen,
-  Bot,
-  Building2,
-  CheckCircle2,
-  ChevronRight,
-  Cpu,
-  FileText,
+  BookOpenCheck,
+  CirclePlay,
   GraduationCap,
-  Layers3,
+  Layers,
+  MonitorPlay,
+  ShieldCheck,
   Sparkles,
   Star,
+  UserRound,
   Users,
-  Video,
 } from "lucide-react";
 import Footer from "../components/layout/Footer";
 
-const stats = [
-  { value: 1000, suffix: "+", label: "Students", icon: Users },
-  { value: 50, suffix: "+", label: "Courses", icon: BookOpen },
-  { value: 10, suffix: "+", label: "Modules", icon: Layers3 },
-  { value: 98, suffix: "%", label: "Satisfaction Rate", icon: Star },
-];
+const headerLinks = ["Home", "About", "Our Team", "Certifications", "LMS Features", "Contact"];
 
-const featureCards = [
+const valueCards = [
   {
-    title: "Department-Based Learning",
-    description:
-      "Focused learning paths for Information Technology, Data Science, and Software Engineering.",
-    icon: Building2,
+    title: "Smart Course Paths",
+    description: "Structured module journeys for measurable learning outcomes.",
+    icon: Layers,
   },
   {
-    title: "Video Courses with Summary PDF",
-    description:
-      "Learn through structured videos and quickly revise with concise generated summary PDFs.",
-    icon: Video,
+    title: "Video Learning Hub",
+    description: "Interactive lessons with replay and chapter-based navigation.",
+    icon: MonitorPlay,
   },
   {
-    title: "AI-Generated Quizzes & Certificates",
-    description:
-      "Assess progress with adaptive quizzes and instantly unlock certificates after completion.",
-    icon: Bot,
-  },
-  {
-    title: "Community & Notifications",
-    description:
-      "Collaborate with peers, ask questions, and get updates in real time across your modules.",
-    icon: BellRing,
-  },
-];
-
-const steps = [
-  {
-    title: "Choose Your Department",
-    description:
-      "Start with the domain that matches your goals: IT, Data Science, or Software Engineering.",
-    icon: Building2,
-  },
-  {
-    title: "Enroll in Modules & Courses",
-    description:
-      "Select structured modules, track your learning progress, and access course materials instantly.",
-    icon: FileText,
-  },
-  {
-    title: "Learn, Take Quizzes, Get Certified",
-    description:
-      "Complete lessons, attempt quizzes, and earn verifiable certificates to showcase your growth.",
+    title: "Certificate Ready",
+    description: "Completion certificates with verifiable learner progress.",
     icon: GraduationCap,
   },
-];
-
-const departments = [
   {
-    name: "Information Technology",
-    description:
-      "Build practical IT foundations with networking, systems, and cloud-ready workflows.",
-    modules: ["Networking Basics", "Web Fundamentals", "Cloud Essentials"],
-    color: "from-indigo-500 to-blue-500",
-    icon: Cpu,
-  },
-  {
-    name: "Data Science",
-    description:
-      "Master data-driven decision making with analytics, visualization, and machine learning.",
-    modules: ["Python for DS", "Statistics", "Machine Learning Lab"],
-    color: "from-pink-500 to-rose-500",
-    icon: Sparkles,
-  },
-  {
-    name: "Software Engineering",
-    description:
-      "Design, build, and scale robust software with modern architectures and team practices.",
-    modules: ["OOP & Patterns", "MERN Development", "DevOps Pipeline"],
-    color: "from-emerald-500 to-teal-500",
-    icon: CheckCircle2,
+    title: "Secure Platform",
+    description: "Role-based access and protected learner data across the system.",
+    icon: ShieldCheck,
   },
 ];
 
-const testimonials = [
-  {
-    name: "Nishara Perera",
-    department: "Data Science",
-    quote:
-      "The module structure and quiz feedback helped me move from theory to real project confidence in weeks.",
-  },
-  {
-    name: "Sahan Weerasekara",
-    department: "Software Engineering",
-    quote:
-      "EduFlow feels like a complete learning operating system, from courses to certificates to community.",
-  },
-  {
-    name: "Amaya Fernando",
-    department: "Information Technology",
-    quote:
-      "The summaries and notification flow kept me consistent. I could revise quickly before every quiz.",
-  },
+const badges = ["95% completion focus", "Live instructor support", "AI-powered summaries"];
+
+const metrics = [
+  { value: "1,000+", label: "Active learners" },
+  { value: "50+", label: "Expert courses" },
+  { value: "98%", label: "Satisfaction" },
 ];
 
-const sectionVariant = {
-  hidden: { opacity: 0, y: 28 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.65, ease: "easeOut" },
-  },
-};
+const learningPaths = [
+  { title: "Frontend Engineering", users: "1,204 learners" },
+  { title: "Data Analytics Fundamentals", users: "982 learners" },
+  { title: "Cloud and DevOps Essentials", users: "1,536 learners" },
+];
 
-const cardContainer = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.12,
-    },
-  },
-};
-
-const cardVariant = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-const Reveal = ({ children, className = "" }) => {
-  const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.12 });
-
-  return (
-    <motion.section
-      ref={ref}
-      className={className}
-      variants={sectionVariant}
-      initial="hidden"
-      animate={inView ? "show" : "hidden"}
-    >
-      {children}
-    </motion.section>
-  );
-};
+const HERO_VIDEO_SOURCES = [
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+  "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+];
 
 const HomeSkeleton = () => (
-  <div className="min-h-screen animate-pulse bg-slate-100">
-    <div className="mx-auto max-w-7xl px-6 py-10">
+  <div className="min-h-screen animate-pulse bg-[#ebf5ff] px-4 pt-28 pb-16 md:px-8">
+    <div className="mx-auto max-w-7xl space-y-6">
       <div className="h-14 w-full rounded-2xl bg-slate-200" />
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <div className="h-60 rounded-3xl bg-slate-200" />
-        <div className="h-60 rounded-3xl bg-slate-200" />
-      </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-4">
+      <div className="h-[420px] rounded-3xl bg-slate-200" />
+      <div className="grid gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-28 rounded-2xl bg-slate-200" />
+          <div key={i} className="h-32 rounded-2xl bg-slate-200" />
         ))}
       </div>
     </div>
@@ -183,310 +78,273 @@ const HomeSkeleton = () => (
 
 const HomePage = () => {
   const [loading, setLoading] = useState(true);
-  const { ref: statRef, inView: statInView } = useInView({
-    triggerOnce: true,
-    threshold: 0.3,
-  });
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoIndex, setVideoIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
+    const timer = setTimeout(() => setLoading(false), 450);
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return <HomeSkeleton />;
-  }
+  useEffect(() => {
+    if (videoFailed || videoReady) return;
+
+    const stallTimer = setTimeout(() => {
+      setVideoIndex((prev) => {
+        if (prev < HERO_VIDEO_SOURCES.length - 1) {
+          return prev + 1;
+        }
+
+        setVideoFailed(true);
+        return prev;
+      });
+    }, 7000);
+
+    return () => clearTimeout(stallTimer);
+  }, [videoFailed, videoReady, videoIndex]);
+
+  useEffect(() => {
+    setVideoReady(false);
+  }, [videoIndex]);
+
+  const handleVideoError = () => {
+    setVideoIndex((prev) => {
+      if (prev < HERO_VIDEO_SOURCES.length - 1) {
+        return prev + 1;
+      }
+
+      setVideoFailed(true);
+      return prev;
+    });
+  };
+
+  if (loading) return <HomeSkeleton />;
 
   return (
     <>
       <motion.div
-        className="overflow-x-hidden text-slate-900"
+        className="overflow-x-hidden bg-[#ebf5ff] text-slate-900"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.45 }}
+        transition={{ duration: 0.35 }}
       >
-        <main>
-        <section className="relative isolate overflow-hidden border-b border-indigo-100 pt-28 pb-16 md:pt-36 md:pb-24">
-          <div className="absolute inset-0 -z-20 bg-hero-mesh" />
-          <motion.div
-            className="hero-blob absolute top-16 -left-10 -z-10 h-56 w-56 rounded-full bg-indigo-400"
-            animate={{ y: [0, -14, 0], x: [0, 10, 0] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="hero-blob absolute right-0 bottom-8 -z-10 h-72 w-72 rounded-full bg-pink-400"
-            animate={{ y: [0, 14, 0], x: [0, -8, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          />
+        <main className="px-4 pt-24 pb-16 md:px-8">
+          <div className="mx-auto max-w-7xl">
+            <section className="rounded-[30px] bg-white p-4 shadow-[0_26px_72px_-46px_rgba(15,23,42,0.48)] md:p-6">
+              <header className="rounded-2xl bg-gradient-to-r from-[#4f43d8] via-[#3f60e8] to-[#2f7be8] px-4 py-3 text-white md:px-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-sm font-bold">EF</span>
+                    <p className="text-lg font-semibold">EduFlow Academy</p>
+                  </div>
 
-          <div className="mx-auto max-w-7xl px-6">
-            <motion.div
-              className="max-w-3xl"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
-            >
-              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/70 px-4 py-2 text-sm font-medium text-indigo-700 backdrop-blur">
-                <Sparkles size={16} />
-                Future-ready LMS for modern learners
-              </span>
-              <h1 className="mt-6 text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                Learn Smarter with EduFlow
-              </h1>
-              <p className="mt-5 max-w-2xl text-lg text-slate-600">
-                Department-based courses, interactive quizzes, certificates, and
-                a vibrant community - all in one platform.
-              </p>
+                  <nav className="hidden items-center gap-5 text-xs font-medium text-blue-100 lg:flex">
+                    {headerLinks.map((item) => (
+                      <button key={item} type="button" className="transition hover:text-white">
+                        {item}
+                      </button>
+                    ))}
+                  </nav>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-white shadow-glow transition hover:-translate-y-0.5 hover:bg-indigo-700"
-                >
-                  Get Started
-                  <ArrowRight size={18} />
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white/85 px-6 py-3 font-semibold text-indigo-700 transition hover:-translate-y-0.5 hover:border-indigo-300"
-                >
-                  Browse Courses
-                  <ChevronRight size={18} />
-                </Link>
+                  <Link
+                    to="/register"
+                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black"
+                  >
+                    Start now
+                  </Link>
+                </div>
+              </header>
+
+              <div className="mt-4 overflow-hidden rounded-3xl bg-[#1f1b52] p-4 md:p-5">
+                <div className="rounded-2xl bg-gradient-to-r from-[#202356] via-[#282c6f] to-[#2f4590] p-5 text-white md:p-8">
+                  <div className="grid items-center gap-6 lg:grid-cols-[1fr_360px]">
+                    <div>
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
+                        <BookOpenCheck size={14} /> Trusted by learning teams
+                      </span>
+
+                      <h1 className="mt-4 max-w-2xl text-3xl font-extrabold leading-tight md:text-5xl">
+                        Become a Certified LMS Learner with Practical Skills.
+                      </h1>
+
+                      <p className="mt-4 max-w-xl text-sm text-blue-100 md:text-base">
+                        EduFlow is your complete learning management platform with structured modules,
+                        progress tracking, intelligent assessments, and certificate-ready outcomes.
+                      </p>
+
+                      <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <Link
+                          to="/register"
+                          className="inline-flex items-center gap-2 rounded-full bg-[#33a4ff] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2692e8]"
+                        >
+                          Apply now <ArrowRight size={15} />
+                        </Link>
+                        <Link
+                          to="/courses"
+                          className="inline-flex items-center gap-2 rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                        >
+                          Support & Tuition
+                        </Link>
+                      </div>
+
+                      <div className="mt-6 flex flex-wrap gap-2.5">
+                        {badges.map((badge) => (
+                          <span
+                            key={badge}
+                            className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100"
+                          >
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-black/20">
+                      {!videoFailed ? (
+                        <>
+                          <video
+                            key={HERO_VIDEO_SOURCES[videoIndex]}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="auto"
+                            onError={handleVideoError}
+                            onLoadedData={() => setVideoReady(true)}
+                            className="h-[240px] w-full object-cover md:h-[300px]"
+                            poster="https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=900&q=80"
+                          >
+                            <source src={HERO_VIDEO_SOURCES[videoIndex]} type="video/mp4" />
+                          </video>
+
+                          {!videoReady && (
+                            <div className="absolute inset-0 grid place-items-center bg-[#141339]/55">
+                              <div className="text-center text-white">
+                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                <p className="mt-2 text-xs text-blue-100">Loading video...</p>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex h-[240px] w-full items-center justify-center bg-gradient-to-br from-indigo-700 to-violet-700 md:h-[300px]">
+                          <div className="text-center text-white">
+                            <CirclePlay className="mx-auto h-12 w-12 text-white/90" />
+                            <p className="mt-2 text-sm font-semibold">LMS Learning Experience</p>
+                            <p className="text-xs text-violet-100">Video preview unavailable right now.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141339]/55 via-transparent to-transparent" />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </motion.div>
 
-            <motion.div
-              ref={statRef}
-              className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-              variants={cardContainer}
-              initial="hidden"
-              animate={statInView ? "show" : "hidden"}
-            >
-              {stats.map(({ icon: Icon, value, suffix, label }) => (
-                <motion.article
-                  key={label}
-                  variants={cardVariant}
-                  className="glass rounded-2xl border border-indigo-100 px-5 py-5 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-indigo-100 p-2 text-indigo-700">
-                      <Icon size={18} />
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {metrics.map((item) => (
+                  <article key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-medium text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-3xl font-bold text-slate-900">{item.value}</p>
+                    <p className="mt-1 text-xs font-semibold text-emerald-600">Growing steadily</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-8 rounded-3xl bg-white p-6 shadow-[0_26px_70px_-46px_rgba(15,23,42,0.46)]">
+              <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+                <div className="overflow-hidden rounded-2xl bg-[#f6f8ff]">
+                  <div className="grid h-full place-content-center p-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Users size={14} /> 95% Outcome Focus
+                      </div>
+                      <div className="mt-3 grid h-44 place-content-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200">
+                        <UserRound className="h-14 w-14 text-slate-500" />
+                      </div>
                     </div>
-                    <p className="text-sm font-medium text-slate-500">{label}</p>
                   </div>
-                  <p className="mt-3 text-3xl font-extrabold text-slate-900">
-                    {statInView ? <CountUp end={value} duration={2} /> : 0}
-                    {suffix}
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">The Problem</p>
+                  <h2 className="mt-2 text-3xl font-extrabold leading-tight text-slate-900">
+                    You are Smart. Capable. Ambitious. But You are Undervalued.
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    Traditional education is not designed for modern learners who need flexibility,
+                    progress visibility, and real career outcomes. EduFlow brings all essential LMS
+                    capabilities into one elegant platform.
                   </p>
-                </motion.article>
-              ))}
-            </motion.div>
-          </div>
-        </section>
 
-        <Reveal className="section-grid py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="mb-10 max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
-                Platform Features
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-                Everything You Need To Learn, Practice, and Grow
-              </h2>
-            </div>
-
-            <motion.div
-              className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
-              variants={cardContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {featureCards.map(({ icon: Icon, title, description }) => (
-                <motion.article
-                  key={title}
-                  variants={cardVariant}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                  className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-xl"
-                >
-                  <div className="w-fit rounded-xl bg-indigo-100 p-3 text-indigo-700">
-                    <Icon size={22} />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {description}
-                  </p>
-                </motion.article>
-              ))}
-            </motion.div>
-          </div>
-        </Reveal>
-
-        <Reveal className="relative py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="mb-10 text-center">
-              <p className="text-sm font-semibold uppercase tracking-wider text-secondary">
-                How It Works
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-                Learn in 3 Simple Steps
-              </h2>
-            </div>
-
-            <div className="relative grid gap-6 md:grid-cols-3">
-              <motion.div
-                className="pointer-events-none absolute top-12 left-12 right-12 hidden h-1 rounded-full bg-gradient-to-r from-indigo-300 via-pink-300 to-emerald-300 md:block"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
-                style={{ transformOrigin: "left" }}
-              />
-
-              {steps.map(({ icon: Icon, title, description }, index) => (
-                <motion.article
-                  key={title}
-                  initial={{ opacity: 0, y: 25 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-slate-900 p-2 text-white">
-                      <Icon size={18} />
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                      Step {index + 1}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{description}</p>
-                </motion.article>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal className="bg-slate-50 py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="mb-10 max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-wider text-emerald-600">
-                Departments
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-                Explore Department Pathways
-              </h2>
-            </div>
-
-            <div className="grid gap-5 lg:grid-cols-3">
-              {departments.map(({ name, description, modules, color, icon: Icon }, index) => (
-                <motion.article
-                  key={name}
-                  initial={{ opacity: 0, y: 25 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
-                  whileHover={{ y: -8 }}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                >
-                  <div className={`bg-gradient-to-r ${color} px-6 py-5 text-white`}>
-                    <div className="flex items-center gap-3">
-                      <Icon size={20} />
-                      <h3 className="text-lg font-semibold">{name}</h3>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <p className="text-sm text-slate-600">{description}</p>
-                    <ul className="mt-4 space-y-2 text-sm text-slate-700">
-                      {modules.map((moduleName) => (
-                        <li key={moduleName} className="flex items-center gap-2">
-                          <CheckCircle2 size={15} className="text-emerald-500" />
-                          {moduleName}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      to="/dashboard"
-                      className="mt-5 inline-flex items-center gap-2 font-semibold text-primary hover:text-indigo-700"
-                    >
-                      Explore
-                      <ArrowRight size={16} />
-                    </Link>
-                  </div>
-                </motion.article>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal className="py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="mb-10 text-center">
-              <p className="text-sm font-semibold uppercase tracking-wider text-pink-600">
-                Testimonials
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-                What Students Say
-              </h2>
-            </div>
-            <motion.div
-              className="grid gap-5 lg:grid-cols-3"
-              variants={cardContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {testimonials.map(({ name, department, quote }) => (
-                <motion.article
-                  key={name}
-                  variants={cardVariant}
-                  className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-                >
-                  <div className="mb-3 flex items-center gap-1 text-amber-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={16} fill="currentColor" />
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {valueCards.map(({ title, description, icon: Icon }) => (
+                      <article key={title} className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                        <div className="inline-flex rounded-lg bg-violet-100 p-2 text-violet-700">
+                          <Icon size={16} />
+                        </div>
+                        <h3 className="mt-2 text-sm font-semibold text-slate-900">{title}</h3>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
+                      </article>
                     ))}
                   </div>
-                  <p className="text-sm leading-7 text-slate-600">"{quote}"</p>
-                  <div className="mt-5 border-t border-slate-100 pt-4">
-                    <p className="font-semibold text-slate-900">{name}</p>
-                    <p className="text-xs uppercase tracking-wider text-slate-500">
-                      {department}
-                    </p>
-                  </div>
-                </motion.article>
-              ))}
-            </motion.div>
-          </div>
-        </Reveal>
 
-        <Reveal className="pb-20">
-          <div className="mx-auto max-w-5xl px-6">
-            <motion.section
-              whileInView={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-secondary px-8 py-12 text-white shadow-xl"
-            >
-              <h2 className="text-3xl font-bold sm:text-4xl">
-                Ready to Start Your Learning Journey?
-              </h2>
-              <p className="mt-3 max-w-2xl text-indigo-100">
-                Join thousands of students already learning with EduFlow.
-              </p>
-              <Link
-                to="/register"
-                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-primary transition hover:-translate-y-0.5"
-              >
-                Sign Up Now
-                <ArrowRight size={18} />
-              </Link>
-            </motion.section>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center gap-2 rounded-full bg-[#2f65ea] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2557d8]"
+                    >
+                      Join EduFlow <ArrowRight size={15} />
+                    </Link>
+                    <div className="inline-flex items-center gap-1 text-sm font-semibold text-amber-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={14} fill="currentColor" />
+                      ))}
+                      <span className="ml-1 text-slate-700">4.9 learner satisfaction</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-8 rounded-3xl bg-gradient-to-r from-[#4d39cd] via-[#4f4fdd] to-[#2f7de9] p-6 text-white shadow-[0_26px_70px_-46px_rgba(32,46,154,0.7)]">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">Ready to start?</p>
+                  <h3 className="mt-1 text-2xl font-bold">Build your career with our learning management system.</h3>
+                  <p className="mt-1 text-sm text-blue-100">Enroll in curated paths, practice with quizzes, and earn your certificate.</p>
+                </div>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-indigo-800"
+                >
+                  Create account <ArrowRight size={15} />
+                </Link>
+              </div>
+            </section>
+
+            <section className="mt-8 rounded-3xl bg-white p-6 shadow-[0_20px_54px_-40px_rgba(15,23,42,0.48)]">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h3 className="text-xl font-bold text-slate-900">Popular learning paths</h3>
+                <Link to="/courses" className="text-sm font-semibold text-violet-700">View all</Link>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                {learningPaths.map((item) => (
+                  <article key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="inline-flex rounded-lg bg-violet-100 p-2 text-violet-700">
+                      <BookOpen size={16} />
+                    </div>
+                    <h4 className="mt-2 text-base font-semibold text-slate-900">{item.title}</h4>
+                    <p className="mt-1 text-sm text-slate-600">{item.users}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
-        </Reveal>
         </main>
       </motion.div>
       <Footer />

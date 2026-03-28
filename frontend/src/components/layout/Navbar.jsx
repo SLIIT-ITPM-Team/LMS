@@ -22,7 +22,7 @@ const guestLinks = [
 
 const studentLinks = [
 	{ to: "/dashboard", label: "Dashboard" },
-	{ to: "/courses/1", label: "My Courses" },
+	{ to: "/student/courses", label: "My Courses" },
 	{ to: "/quizzes", label: "Quizzes" },
 	{ to: "/community", label: "Community" },
     { to: "/materials", label: "Materials" },
@@ -31,6 +31,7 @@ const studentLinks = [
 
 const adminLinks = [
 	{ to: "/admin", label: "Dashboard" },
+	{ to: "/admin/courses", label: "Course Management" },
 	{ to: "/admin/users", label: "Users" },
 	{ to: "/admin/modules", label: "Modules" },
 	{ to: "/admin/departments", label: "Departments" },
@@ -67,8 +68,8 @@ const Navbar = () => {
 	const navLinkClass = ({ isActive }) =>
 		`rounded-full px-3.5 py-2 text-sm font-semibold transition ${
 			isActive
-				? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white shadow-lg shadow-indigo-200"
-				: "text-slate-700 hover:bg-white/60 hover:text-slate-900"
+				? "bg-white text-indigo-700 shadow-md"
+				: "text-indigo-100 hover:bg-white/20 hover:text-white"
 		}`;
 
 	const handleLogout = async () => {
@@ -113,13 +114,13 @@ const Navbar = () => {
 	}, [isAuthenticated, notifOpen]);
 
 	return (
-		<header className="fixed top-0 z-50 w-full px-4 py-3 md:px-6">
-			<nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-xl backdrop-blur-xl">
+		<header className="fixed top-0 z-50 w-full border-b border-indigo-300/30 bg-gradient-to-r from-indigo-700 via-violet-700 to-purple-700 px-4 py-3 shadow-lg shadow-indigo-900/20 md:px-6">
+			<nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
 				<Link to="/" className="flex items-center gap-2">
-					<span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-xs font-extrabold text-white shadow-lg shadow-indigo-200">
+					<span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-xs font-extrabold text-indigo-700 shadow-lg shadow-indigo-900/20">
 						EF
 					</span>
-					<span className="text-lg font-bold text-slate-900">EduFlow</span>
+					<span className="text-lg font-bold text-white">EduFlow</span>
 				</Link>
 
 				<div className="hidden items-center gap-1 md:flex">
@@ -131,17 +132,17 @@ const Navbar = () => {
 				</div>
 
 				<div className="hidden items-center gap-2 md:flex">
-					<div className="flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 shadow-inner backdrop-blur">
-						<Search size={16} className="text-slate-500" />
+					<div className="flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-2 text-sm text-indigo-100 shadow-inner backdrop-blur">
+						<Search size={16} className="text-indigo-100" />
 						<input
 							type="text"
 							placeholder="Search"
-							className="w-32 bg-transparent text-sm outline-none placeholder:text-slate-400"
+							className="w-32 bg-transparent text-sm text-white outline-none placeholder:text-indigo-100"
 						/>
 					</div>
 					<button
 						type="button"
-						className="relative rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+						className="relative rounded-full border border-white/25 bg-white/15 p-2 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/25 hover:shadow-lg"
 						aria-label="Notifications"
 						onClick={() => setNotifOpen((prev) => !prev)}
 					>
@@ -205,21 +206,21 @@ const Navbar = () => {
 					</button>
 					{isAuthenticated ? (
 						<>
-							<div className="flex items-center gap-3 rounded-full border border-white/60 bg-white/70 px-3 py-2 shadow-sm backdrop-blur">
-								<span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+							<div className="flex items-center gap-3 rounded-full border border-white/25 bg-white/15 px-3 py-2 shadow-sm backdrop-blur">
+								<span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-indigo-700">
 									{initials}
 								</span>
 								<div className="leading-tight">
-									<p className="text-sm font-semibold text-slate-900">
+									<p className="text-sm font-semibold text-white">
 										{displayName}
 									</p>
-									<p className="text-xs text-slate-500">Learner</p>
+									<p className="text-xs text-indigo-100">Learner</p>
 								</div>
 							</div>
 							<button
 								type="button"
 								onClick={handleLogout}
-								className="rounded-full border border-white/80 bg-white/70 p-2 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+								className="rounded-full border border-white/25 bg-white/15 p-2 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/25 hover:shadow-lg"
 								aria-label="Logout"
 							>
 								<LogOut size={18} />
@@ -229,13 +230,13 @@ const Navbar = () => {
 						<div className="flex gap-2">
 							<Link
 								to="/login"
-								className="rounded-xl border border-white/70 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white/90"
+								className="rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
 							>
 								Login
 							</Link>
 							<Link
 								to="/register"
-								className="rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:shadow-lg"
+								className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-indigo-700 shadow-md shadow-indigo-900/20 transition hover:shadow-lg"
 							>
 								Register
 							</Link>
@@ -246,7 +247,7 @@ const Navbar = () => {
 				<button
 					type="button"
 					onClick={() => setOpen((prev) => !prev)}
-					className="rounded-xl border border-white/70 bg-white/70 p-2 text-slate-700 shadow-sm backdrop-blur md:hidden"
+					className="rounded-xl border border-white/25 bg-white/15 p-2 text-white shadow-sm backdrop-blur md:hidden"
 					aria-label="Toggle menu"
 				>
 					{open ? <X size={20} /> : <Menu size={20} />}
@@ -259,7 +260,7 @@ const Navbar = () => {
 						initial={{ opacity: 0, y: -8 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -8 }}
-						className="mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/60 bg-white/80 p-4 shadow-lg backdrop-blur md:hidden"
+						className="mx-auto mt-2 w-full max-w-7xl rounded-2xl border border-white/20 bg-indigo-900/40 p-4 shadow-lg backdrop-blur md:hidden"
 					>
 						<div className="flex flex-col gap-2">
 							{currentLinks.map((item) => (
@@ -274,24 +275,24 @@ const Navbar = () => {
 							))}
 						</div>
 
-						<div className="mt-3 space-y-3 border-t border-white/70 pt-3">
-							<div className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/70 px-3 py-2 text-sm text-slate-600 shadow-inner">
-								<Search size={16} className="text-slate-500" />
+						<div className="mt-3 space-y-3 border-t border-white/20 pt-3">
+							<div className="flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-sm text-indigo-100 shadow-inner">
+								<Search size={16} className="text-indigo-100" />
 								<input
 									type="text"
 									placeholder="Search"
-									className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+									className="w-full bg-transparent text-sm text-white outline-none placeholder:text-indigo-100"
 								/>
 							</div>
-							<div className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/70 px-3 py-2 shadow-sm">
-								<span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-semibold text-white">
+							<div className="flex items-center gap-3 rounded-xl border border-white/25 bg-white/10 px-3 py-2 shadow-sm">
+								<span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-semibold text-indigo-700">
 									{initials}
 								</span>
 								<div className="leading-tight">
-									<p className="text-sm font-semibold text-slate-900">
+									<p className="text-sm font-semibold text-white">
 										{displayName}
 									</p>
-									<p className="text-xs text-slate-500">Learner</p>
+									<p className="text-xs text-indigo-100">Learner</p>
 								</div>
 							</div>
 							{isAuthenticated ? (
@@ -301,7 +302,7 @@ const Navbar = () => {
 										await handleLogout();
 										setOpen(false);
 									}}
-									className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200"
+									className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-900/20"
 								>
 									<LogOut size={16} />
 									Logout
@@ -311,14 +312,14 @@ const Navbar = () => {
 									<Link
 										to="/login"
 										onClick={() => setOpen(false)}
-										className="w-full rounded-xl border border-white/70 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-700"
+										className="w-full rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-center text-sm font-semibold text-white"
 									>
 										Login
 									</Link>
 									<Link
 										to="/register"
 										onClick={() => setOpen(false)}
-										className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2 text-center text-sm font-semibold text-white shadow-md shadow-indigo-200"
+										className="w-full rounded-xl bg-white px-4 py-2 text-center text-sm font-semibold text-indigo-700 shadow-md shadow-indigo-900/20"
 									>
 										Register
 									</Link>

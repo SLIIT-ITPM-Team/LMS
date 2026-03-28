@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Shield, Users, UserCheck, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getStatistics } from '../../api/admin.api';
-import StatCard from '../../components/admin/StatCard';
-import DepartmentDistribution from '../../components/admin/DepartmentDistribution';
+import useAuth from '../../hooks/useAuth';
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totals: {
@@ -23,7 +21,16 @@ const AdminDashboard = () => {
     const load = async () => {
       try {
         const data = await getStatistics();
-        setStats(data);
+        setStats({
+          totals: {
+            totalUsers: Number(data?.totals?.totalUsers ?? 0),
+            totalStudents: Number(data?.totals?.totalStudents ?? 0),
+            totalAdmins: Number(data?.totals?.totalAdmins ?? 0),
+            activeUsers: Number(data?.totals?.activeUsers ?? 0),
+          },
+          departmentDistribution: data?.departmentDistribution ?? [],
+          recentUsers: data?.recentUsers ?? [],
+        });
       } catch (error) {
         toast.error(error?.response?.data?.message || 'Failed to load statistics');
       } finally {
@@ -35,63 +42,116 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-24 md:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-lg">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-indigo-100">Overview of platform activity and user distribution.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/admin/users" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
-              Manage Users
-            </Link>
-            <Link to="/admin/departments" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
-              Departments
-            </Link>
-            <Link to="/admin/community" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
-              Community
-            </Link>
-            <Link to="/admin/reports" className="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/30">
-              Reports
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Total Users" value={stats.totals.totalUsers} icon={Users} color="indigo" />
-          <StatCard title="Students" value={stats.totals.totalStudents} icon={UserCheck} color="violet" />
-          <StatCard title="Admins" value={stats.totals.totalAdmins} icon={Shield} color="orange" />
-          <StatCard title="Active Sessions" value={stats.totals.activeUsers} icon={Activity} color="emerald" />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-          <DepartmentDistribution data={stats.departmentDistribution} />
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">Recent Users</h3>
-            {loading ? (
-              <div className="mt-4 space-y-2">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="h-9 animate-pulse rounded-md bg-slate-100" />
-                ))}
-              </div>
-            ) : (
-              <div className="mt-4 space-y-2">
-                {stats.recentUsers.map((user) => (
-                  <div key={user._id} className="rounded-lg border border-slate-100 px-3 py-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-slate-800">{user.name}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${user.role === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                        {user.role}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">{user.email}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          Welcome back {user?.name || 'Admin'}! 🎉
+        </h1>
       </div>
+
+      {loading ? (
+        <div className="space-y-6">
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="rounded-xl bg-white p-6 shadow-sm">
+                <div className="h-4 w-28 animate-pulse rounded bg-gray-200" />
+                <div className="mt-3 h-8 w-24 animate-pulse rounded bg-gray-200" />
+                <div className="mt-3 h-4 w-40 animate-pulse rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="rounded-xl bg-white p-6 shadow-sm">
+                <div className="h-5 w-36 animate-pulse rounded bg-gray-200" />
+                <div className="mt-4 h-9 w-28 animate-pulse rounded bg-gray-200" />
+                <div className="mt-4 h-4 w-56 animate-pulse rounded bg-gray-200" />
+                <div className="mt-2 h-4 w-48 animate-pulse rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-gray-500">Page views</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {Number(stats?.totals?.totalUsers || 0).toLocaleString()}
+              </p>
+              <p className="mt-2 text-sm text-green-600">
+                {Number(stats?.totals?.totalUsers || 0) > 0 ? 52 : 0}% lifetime vs last month
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-gray-500">Visitors</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {Number(stats?.totals?.activeUsers || 0).toLocaleString()}
+              </p>
+              <p className="mt-2 text-sm text-green-600">
+                {Number(stats?.totals?.activeUsers || 0) > 0 ? 75 : 0}% lifetime vs last month
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-gray-500">New users</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {Number(stats?.totals?.totalStudents || 0).toLocaleString()}
+              </p>
+              <p className="mt-2 text-sm text-green-600">
+                {Number(stats?.totals?.totalStudents || 0) > 0 ? 25 : 0}% lifetime vs last month
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-800">Visitors report</h2>
+              <p className="mt-2 text-sm text-green-600">
+                {Number(stats?.totals?.activeUsers || 0) > 0 ? 7.5 : 0}% visitors increased compared to last month
+              </p>
+              <p className="mt-4 text-4xl font-bold text-gray-900">
+                {`${Math.round(Number(stats?.totals?.totalUsers || 0) / 1000)}K`}
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Organic visits</span>
+                  <span className="font-medium text-gray-900">
+                    {`${Math.round(Number(stats?.totals?.totalUsers || 0) * 0.45)}K`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Visitors by referral</span>
+                  <span className="font-medium text-gray-900">
+                    {`${Math.round(Number(stats?.totals?.totalUsers || 0) * 0.55)}K`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-800">Weekly visits</h2>
+              <p className="mt-4 text-3xl font-bold text-gray-900">
+                ${Number(stats?.totals?.activeUsers || 0).toLocaleString()}K
+              </p>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Source rate:</span>
+                  <span className="font-medium text-gray-900">12.5%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Bounce rate:</span>
+                  <span className="font-medium text-gray-900">47%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

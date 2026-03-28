@@ -1,20 +1,72 @@
+const { generateSummary } = require('../utils/textrank');
+
 /**
- * Simple extractive summarizer: take the first few non-empty sentences.
- * Keeps dependency-light and predictable for server-side usage.
+ * Generate summary from text using TextRank algorithm
+ * @param {string} text - Input text to summarize
+ * @param {number} maxWords - Maximum number of words (default: 500)
+ * @returns {string} - Generated summary
  */
-const splitIntoSentences = (text = '') =>
-  text
-    .replace(/\s+/g, ' ')
-    .split(/(?<=[.!?])\s+/)
-    .filter((sentence) => sentence && sentence.length > 2);
+function generateTextRankSummary(text, maxWords = 500) {
+  if (!text || text.trim().length === 0) {
+    throw new Error('Input text is required for summarization');
+  }
 
-export const summarizeText = (text = '', maxSentences = 3) => {
-  if (!text) return 'No text available for summarization.';
+  try {
+    const summary = generateSummary(text, maxWords);
+    
+    if (!summary || summary.trim().length === 0) {
+      throw new Error('Unable to generate summary from the provided text');
+    }
 
-  const sentences = splitIntoSentences(text);
-  if (!sentences.length) return 'No text available for summarization.';
+    return summary;
+  } catch (error) {
+    console.error('Summarization error:', error);
+    throw new Error(`Failed to generate summary: ${error.message}`);
+  }
+}
 
-  return sentences.slice(0, maxSentences).join(' ');
+/**
+ * Validate summary quality
+ * @param {string} originalText - Original text
+ * @param {string} summary - Generated summary
+ * @returns {Object} - Validation result
+ */
+function validateSummary(originalText, summary) {
+  const originalWords = originalText.split(/\s+/).length;
+  const summaryWords = summary.split(/\s+/).length;
+  const compressionRatio = summaryWords / originalWords;
+
+  return {
+    originalWordCount: originalWords,
+    summaryWordCount: summaryWords,
+    compressionRatio: compressionRatio,
+    isValid: summaryWords > 0 && compressionRatio <= 1,
+    quality: compressionRatio < 0.5 ? 'good' : 'fair'
+  };
+}
+
+/**
+ * Process and validate summary
+ * @param {string} text - Input text
+ * @param {number} maxWords - Maximum words for summary
+ * @returns {Object} - Processed summary with validation
+ */
+function processSummary(text, maxWords = 500) {
+  const summary = generateTextRankSummary(text, maxWords);
+  const validation = validateSummary(text, summary);
+
+  return {
+    summary,
+    validation,
+    metadata: {
+      maxWords,
+      generatedAt: new Date().toISOString()
+    }
+  };
+}
+
+module.exports = {
+  generateTextRankSummary,
+  validateSummary,
+  processSummary
 };
-
-export default summarizeText;
