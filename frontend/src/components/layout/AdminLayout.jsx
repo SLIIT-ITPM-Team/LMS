@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Building2, FileText, Layers3, LayoutDashboard, LogOut, MessagesSquare, Users } from 'lucide-react';
+import { Building2, Brain, FileText, Layers3, LayoutDashboard, LogOut, MessagesSquare, Users } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 const adminLinks = [
@@ -10,6 +10,7 @@ const adminLinks = [
   { to: '/admin/modules', label: 'Modules', icon: Layers3 },
   { to: '/admin/departments', label: 'Departments', icon: Building2 },
   { to: '/admin/community', label: 'Community', icon: MessagesSquare },
+   { to: '/admin/quiz', label: 'Quiz', icon: Brain },
   { to: '/admin/reports', label: 'Reports', icon: FileText },
 ];
 
