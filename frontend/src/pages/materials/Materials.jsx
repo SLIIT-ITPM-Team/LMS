@@ -1,17 +1,24 @@
 import React, { useMemo, useState } from "react";
-import { Inbox } from "lucide-react";
+import { BookOpen, FileText, Inbox } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
 import MaterialHeader from "../../components/materials/MaterialHeader";
+import MaterialUploadForm from "../../components/materials/MaterialUploadForm";
 import SearchBar from "../../components/materials/SearchBar";
 import CategoryCards from "../../components/materials/CategoryCards";
 import MaterialsGrid from "../../components/materials/MaterialsGrid";
 
 const categories = [
-	{ name: "Lecture Notes", meta: "12 Modules • 48 Files" },
-	{ name: "Past Papers", meta: "2020–2024 • 24 Files" },
-	{ name: "Model Papers", meta: "Instructor • 12 Files" },
-	{ name: "Short Notes", meta: "Quick Revision • 31 Files" },
+	{ name: "Lecture Notes", meta: "12 Modules | 48 Files" },
+	{ name: "Past Papers", meta: "2020-2024 | 24 Files" },
+	{ name: "Model Papers", meta: "Instructor | 12 Files" },
+	{ name: "Short Notes", meta: "Quick Revision | 31 Files" },
 ];
+
+const lectureNoteDepartments = ["IT", "SE", "DS", "Cyber", "ISE", "IM"];
+const pastPaperDepartments = ["IT", "SE", "DS", "Cyber", "ISE", "IM"];
+const modelPaperDepartments = ["IT", "SE", "DS", "Cyber", "ISE", "IM"];
+const shortNoteDepartments = ["IT", "SE", "DS", "Cyber", "ISE", "IM"];
 
 const materialsData = [
 	{
@@ -124,9 +131,143 @@ const EmptyState = () => (
 	</div>
 );
 
+const LectureNotesDepartments = ({ onSelectDepartment }) => (
+	<div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
+		<p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">
+			LECTURE NOTES
+		</p>
+		<h3 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">
+			Choose Department
+		</h3>
+		<p className="mt-2 text-sm text-slate-600 md:text-base">
+			Select a department to browse lecture note materials
+		</p>
+
+		<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{lectureNoteDepartments.map((department) => (
+				<button
+					key={department}
+					type="button"
+					onClick={() => onSelectDepartment(department)}
+					className="group flex items-start gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 text-left shadow-md transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
+				>
+					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+						<BookOpen size={20} />
+					</div>
+					<div>
+						<p className="text-sm font-semibold text-slate-900">{department}</p>
+						<p className="mt-0.5 text-xs text-slate-500">Lecture materials</p>
+					</div>
+				</button>
+			))}
+		</div>
+	</div>
+);
+
+const PastPapersDepartments = ({ onSelectDepartment }) => (
+	<div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
+		<p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">
+			PAST PAPERS
+		</p>
+		<h3 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">
+			Choose Department
+		</h3>
+		<p className="mt-2 text-sm text-slate-600 md:text-base">
+			Select a department to browse past papers
+		</p>
+
+		<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{pastPaperDepartments.map((department) => (
+				<button
+					key={department}
+					type="button"
+					onClick={() => onSelectDepartment(department)}
+					className="group flex items-start gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 text-left shadow-md transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
+				>
+					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+						<FileText size={20} />
+					</div>
+					<div>
+						<p className="text-sm font-semibold text-slate-900">{department}</p>
+						<p className="mt-0.5 text-xs text-slate-500">Past exam papers</p>
+					</div>
+				</button>
+			))}
+		</div>
+	</div>
+);
+
+const ModelPapersDepartments = ({ onSelectDepartment }) => (
+	<div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
+		<p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">
+			MODEL PAPERS
+		</p>
+		<h3 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">
+			Choose Department
+		</h3>
+		<p className="mt-2 text-sm text-slate-600 md:text-base">
+			Select a department to browse model paper materials
+		</p>
+
+		<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{modelPaperDepartments.map((department) => (
+				<button
+					key={department}
+					type="button"
+					onClick={() => onSelectDepartment(department)}
+					className="group flex items-start gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 text-left shadow-md transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
+				>
+					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+						<FileText size={20} />
+					</div>
+					<div>
+						<p className="text-sm font-semibold text-slate-900">{department}</p>
+						<p className="mt-0.5 text-xs text-slate-500">Model papers</p>
+					</div>
+				</button>
+			))}
+		</div>
+	</div>
+);
+
+const ShortNotesDepartments = ({ onSelectDepartment }) => (
+	<div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-lg backdrop-blur-xl md:p-8">
+		<p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">
+			SHORT NOTES
+		</p>
+		<h3 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">
+			Choose Department
+		</h3>
+		<p className="mt-2 text-sm text-slate-600 md:text-base">
+			Select a department to browse short note materials
+		</p>
+
+		<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			{shortNoteDepartments.map((department) => (
+				<button
+					key={department}
+					type="button"
+					onClick={() => onSelectDepartment(department)}
+					className="group flex items-start gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 text-left shadow-md transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
+				>
+					<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+						<FileText size={20} />
+					</div>
+					<div>
+						<p className="text-sm font-semibold text-slate-900">{department}</p>
+						<p className="mt-0.5 text-xs text-slate-500">Short notes</p>
+					</div>
+				</button>
+			))}
+		</div>
+	</div>
+);
+
 const Materials = () => {
+	const navigate = useNavigate();
 	const [activeCategory, setActiveCategory] = useState(categories[0].name);
 	const [query, setQuery] = useState("");
+	const [isSendMaterialOpen, setIsSendMaterialOpen] = useState(false);
 
 	const filteredMaterials = useMemo(() => {
 		const q = query.toLowerCase().trim();
@@ -153,7 +294,7 @@ const Materials = () => {
 			<main className="relative mx-auto max-w-7xl px-4 pb-16 pt-28 md:px-8">
 				<MaterialHeader
 					onFilter={() => {}}
-					onUpload={() => {}}
+					onUpload={() => setIsSendMaterialOpen(true)}
 				/>
 
 				<div className="mt-6">
@@ -161,6 +302,7 @@ const Materials = () => {
 						value={query}
 						onChange={setQuery}
 						onAskAI={() => setQuery("Summarize Module 3 of Signals")}
+						onQuickSummary={() => navigate("/materials/quick-summary")}
 					/>
 				</div>
 
@@ -173,13 +315,42 @@ const Materials = () => {
 				</div>
 
 				<div className="mt-8">
-					{filteredMaterials.length ? (
+					{activeCategory === "Lecture Notes" ? (
+						<LectureNotesDepartments
+							onSelectDepartment={(department) =>
+								navigate(`/materials/lecture-notes/${department}`)
+							}
+						/>
+					) : activeCategory === "Past Papers" ? (
+						<PastPapersDepartments
+							onSelectDepartment={(department) =>
+								navigate(`/materials/past-papers/${department}`)
+							}
+						/>
+					) : activeCategory === "Model Papers" ? (
+						<ModelPapersDepartments
+							onSelectDepartment={(department) =>
+								navigate(`/materials/model-papers/${department}`)
+							}
+						/>
+					) : activeCategory === "Short Notes" ? (
+						<ShortNotesDepartments
+							onSelectDepartment={(department) =>
+								navigate(`/materials/short-notes/${department}`)
+							}
+						/>
+					) : filteredMaterials.length ? (
 						<MaterialsGrid materials={filteredMaterials} />
 					) : (
 						<EmptyState />
 					)}
 				</div>
 			</main>
+
+			<MaterialUploadForm
+				isOpen={isSendMaterialOpen}
+				onClose={() => setIsSendMaterialOpen(false)}
+			/>
 		</div>
 	);
 };
