@@ -6,13 +6,18 @@ import Navbar from "./components/layout/Navbar";
 
 const App = () => {
   const location = useLocation();
-  const hideNavbar = location.pathname === "/login" || location.pathname === "/register";
+  const hideNavbar =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname.startsWith("/admin");
 
   return (
     <>
       <Toaster position="top-right" />
       {!hideNavbar ? <Navbar /> : null}
-      <AppRoutes />
+      <div className={hideNavbar ? "" : "pt-24 md:pt-28"}>
+        <AppRoutes />
+      </div>
     </>
   );
 };
