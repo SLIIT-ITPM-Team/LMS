@@ -5,7 +5,6 @@ import {
 	Download,
 	ExternalLink,
 	FileText,
-	Heart,
 	Sparkles,
 	Star,
 } from "lucide-react";
@@ -100,13 +99,6 @@ const MaterialCard = ({ material }) => {
 				>
 					<Star size={16} />
 					Favorite
-				</button>
-				<button
-					type="button"
-					className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:shadow-xl"
-				>
-					<Heart size={16} className="fill-white/40 text-white" />
-					Quick Summary
 				</button>
 			</div>
 		</article>

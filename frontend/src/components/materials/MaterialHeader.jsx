@@ -31,7 +31,7 @@ const MaterialHeader = ({ onFilter, onUpload }) => {
 					className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:shadow-xl"
 				>
 					<Upload size={16} />
-					Upload Material
+					Send Material
 				</button>
 			</div>
 		</div>

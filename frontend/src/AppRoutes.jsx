@@ -12,6 +12,12 @@ import QuizPage from "./pages/quizzes/QuizPage";
 import CommunityHub from "./pages/community/CommunityHub";
 import Notifications from "./pages/notifications/Notifications";
 import Materials from "./pages/materials/Materials";
+import LectureNotesDepartments from "./pages/materials/LectureNotesDepartments";
+import LectureNotesDepartment from "./pages/materials/LectureNotesDepartment";
+import ModelPapersDepartment from "./pages/materials/ModelPapersDepartment";
+import PastPapersDepartment from "./pages/materials/PastPapersDepartment";
+import QuickSummary from "./pages/materials/QuickSummary";
+import ShortNotesDepartment from "./pages/materials/ShortNotesDepartment";
 import Certificates from "./pages/certificates/Certificates";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -92,6 +98,54 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute roles={["student", "admin"]}>
           <Materials />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/quick-summary"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <QuickSummary />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/lecture-notes"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <LectureNotesDepartments />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/lecture-notes/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <LectureNotesDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/past-papers/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <PastPapersDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/model-papers/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <ModelPapersDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/short-notes/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <ShortNotesDepartment />
         </ProtectedRoute>
       }
     />
