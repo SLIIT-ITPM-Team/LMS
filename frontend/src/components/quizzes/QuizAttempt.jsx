@@ -11,12 +11,17 @@ const QuizAttempt = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(initialForm);
+  const [inputMode, setInputMode] = useState('summary');
+  const [pdfFile, setPdfFile] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
   const canGenerate = useMemo(() => {
+    if (inputMode === 'pdf') {
+      return !!pdfFile;
+    }
     return form.summary.trim().length >= 60;
-  }, [form.summary]);
+  }, [form.summary, inputMode, pdfFile]);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -28,7 +33,11 @@ const QuizAttempt = () => {
 
   const handleGenerateQuiz = async () => {
     if (!canGenerate) {
-      setError('Please enter a richer summary with at least 60 characters.');
+      setError(
+        inputMode === 'pdf'
+          ? 'Please select a PDF file to continue.'
+          : 'Please enter a richer summary with at least 60 characters.'
+      );
       return;
     }
 
@@ -36,9 +45,20 @@ const QuizAttempt = () => {
       setIsGenerating(true);
       setError('');
 
-      const response = await api.post('/api/quiz/from-summary', {
-        summary: form.summary.trim()
-      });
+      let response;
+      if (inputMode === 'pdf') {
+        const formData = new FormData();
+        formData.append('pdf', pdfFile);
+        response = await api.post('/api/quiz/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        response = await api.post('/api/quiz/from-summary', {
+          summary: form.summary.trim()
+        });
+      }
 
       const quizId = response.data?._id || response.data?.quiz?._id;
       if (!quizId) {
@@ -63,8 +83,33 @@ const QuizAttempt = () => {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl md:p-8">
           <h1 className="text-2xl font-bold md:text-3xl">Generate Contextual Quiz</h1>
           <p className="mt-2 text-sm text-slate-600 md:text-base">
-            Enter a summary and generate 10 balanced questions with contextual options and validated answers.
+            Add a summary or upload a PDF and generate 10 balanced questions with contextual options and validated answers.
           </p>
+
+          <div className="mt-5 inline-flex rounded-xl border border-slate-300 bg-slate-50 p-1">
+            <button
+              type="button"
+              onClick={() => setInputMode('summary')}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                inputMode === 'summary'
+                  ? 'bg-[#0B1F3B] text-white'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Use Summary
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('pdf')}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                inputMode === 'pdf'
+                  ? 'bg-[#0B1F3B] text-white'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              Upload PDF
+            </button>
+          </div>
 
           <div className="mt-6 space-y-4">
             <label className="block">
@@ -79,22 +124,45 @@ const QuizAttempt = () => {
               />
             </label>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-slate-700">Summary</span>
-              <textarea
-                name="summary"
-                value={form.summary}
-                onChange={handleInputChange}
-                rows={12}
-                placeholder="Paste or type a detailed summary..."
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-              />
-            </label>
+            {inputMode === 'summary' ? (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">Summary</span>
+                  <textarea
+                    name="summary"
+                    value={form.summary}
+                    onChange={handleInputChange}
+                    rows={12}
+                    placeholder="Paste or type a detailed summary..."
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
+                  />
+                </label>
 
-            <div className="flex items-center justify-between text-xs text-slate-600">
-              <span>{form.summary.trim().length} characters</span>
-              <span>{canGenerate ? 'Ready' : 'Minimum 60 characters'}</span>
-            </div>
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span>{form.summary.trim().length} characters</span>
+                  <span>{canGenerate ? 'Ready' : 'Minimum 60 characters'}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">PDF Document</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(event) => {
+                      const selected = event.target.files?.[0] || null;
+                      setPdfFile(selected);
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition file:mr-4 file:rounded-md file:border-0 file:bg-[#0B1F3B] file:px-3 file:py-2 file:text-white"
+                  />
+                </label>
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span>{pdfFile ? `${pdfFile.name} (${Math.round(pdfFile.size / 1024)} KB)` : 'No file selected'}</span>
+                  <span>{canGenerate ? 'Ready' : 'Select a PDF file'}</span>
+                </div>
+              </>
+            )}
 
             {error ? (
               <div className="rounded-xl border border-rose-300/60 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">
@@ -108,7 +176,7 @@ const QuizAttempt = () => {
               disabled={isGenerating || !canGenerate}
               className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isGenerating ? 'Generating Quiz...' : 'Generate 10 Questions'}
+              {isGenerating ? 'Generating Quiz...' : `Generate 10 Questions from ${inputMode === 'pdf' ? 'PDF' : 'Summary'}`}
             </button>
           </div>
         </section>

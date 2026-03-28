@@ -330,6 +330,14 @@ router.post('/upload', upload.single('pdf'), async (req, res) => {
     const quiz = await Quiz.create({
       title: createQuizTitle(summary, keywords),
       summary,
+      sourceType: 'pdf',
+      sourceDocument: {
+        originalName: req.file.originalname || '',
+        storedName: req.file.filename || '',
+        mimeType: req.file.mimetype || '',
+        size: req.file.size || 0,
+        extractedTextLength: rawText.length
+      },
       questions
     });
 
@@ -383,6 +391,7 @@ router.post('/from-summary', async (req, res) => {
     const quiz = await Quiz.create({
       title: createQuizTitle(summary, keywords),
       summary,
+      sourceType: 'summary',
       questions
     });
 
