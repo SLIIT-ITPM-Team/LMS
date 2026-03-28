@@ -1,13 +1,13 @@
 :root {
-  --bg: #f8fafc;
+  --bg: #f4f8ff;
   --surface: #ffffff;
-  --border: #e2e8f0;
+  --border: #dbe8ff;
   --text: #0f172a;
-  --muted: #64748b;
-  --primary: #1d4ed8;
-  --primary-soft: #e0e7ff;
+  --muted: #4b6285;
+  --primary: #0b1f3b;
+  --primary-soft: #dbe8ff;
   --danger: #dc2626;
-  --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --shadow: 0 12px 30px rgba(11, 31, 59, 0.12);
 }
 
 * {
@@ -139,8 +139,8 @@ a {
 }
 
 .badge.blue {
-  background: #e0f2fe;
-  color: #075985;
+  background: #dbe8ff;
+  color: #0f2a61;
 }
 
 .btn {
@@ -160,7 +160,7 @@ a {
 .btn.primary {
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.25);
+  box-shadow: 0 8px 16px rgba(11, 31, 59, 0.28);
 }
 
 .btn.ghost {

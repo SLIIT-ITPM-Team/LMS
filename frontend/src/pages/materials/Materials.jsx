@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { BookOpen, FileText, Inbox } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
+import Footer from "../../components/layout/Footer";
 import MaterialHeader from "../../components/materials/MaterialHeader";
 import MaterialUploadForm from "../../components/materials/MaterialUploadForm";
 import SearchBar from "../../components/materials/SearchBar";
@@ -269,18 +270,6 @@ const Materials = () => {
 	const [query, setQuery] = useState("");
 	const [isSendMaterialOpen, setIsSendMaterialOpen] = useState(false);
 
-	const filteredMaterials = useMemo(() => {
-		const q = query.toLowerCase().trim();
-		return materialsData.filter(
-			(material) =>
-				material.category === activeCategory &&
-				(!q ||
-					material.title.toLowerCase().includes(q) ||
-					material.description.toLowerCase().includes(q) ||
-					material.tag.toLowerCase().includes(q)),
-		);
-	}, [activeCategory, query]);
-
 	return (
 		<div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-pink-50 to-blue-50 text-slate-900">
 			<div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -339,8 +328,8 @@ const Materials = () => {
 								navigate(`/materials/short-notes/${department}`)
 							}
 						/>
-					) : filteredMaterials.length ? (
-						<MaterialsGrid materials={filteredMaterials} />
+					) : query.trim() && materialsData.length ? (
+						<MaterialsGrid materials={materialsData} />
 					) : (
 						<EmptyState />
 					)}
@@ -351,6 +340,8 @@ const Materials = () => {
 				isOpen={isSendMaterialOpen}
 				onClose={() => setIsSendMaterialOpen(false)}
 			/>
+
+			<Footer />
 		</div>
 	);
 };

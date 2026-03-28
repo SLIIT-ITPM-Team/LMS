@@ -120,6 +120,7 @@ const channelRoutes = require('./routes/channel.routes.js');
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
 const courseRouter = require('./routes/course.routes.js');
+const materialRouter = require('./routes/material.routes.js');
 
 // Health check endpoint first
 app.use('/api/health', healthRouter);
@@ -130,6 +131,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/quiz', quizRouter);
 app.use('/api/courses', courseRouter);
+app.use('/api/materials', materialRouter);
 
 // Global io instance
 let io;
