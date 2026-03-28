@@ -1,7 +1,7 @@
 const theme = {
-  givry: '#F7ECB5',
-  teal: '#053668',
-  blaze: '#FF7100'
+  givry: '#dbe8ff',
+  teal: '#0B1F3B',
+  blaze: '#2f66f5'
 };
 
 export default theme;

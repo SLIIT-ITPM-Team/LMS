@@ -49,6 +49,8 @@ router.post(
         body('name').trim().notEmpty().withMessage('Module name is required'),
         body('code').trim().notEmpty().withMessage('Module code is required'),
         body('department').notEmpty().withMessage('Department is required'),
+        body('academicYear').isIn(['Year 1', 'Year 2', 'Year 3', 'Year 4']).withMessage('Academic year is required'),
+        body('academicSemester').isIn(['1st Semester', '2nd Semester']).withMessage('Academic semester is required'),
     ],
     createModule
 );

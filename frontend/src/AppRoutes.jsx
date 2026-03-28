@@ -12,6 +12,12 @@ import QuizPage from "./pages/quizzes/QuizPage";
 import CommunityHub from "./pages/community/CommunityHub";
 import Notifications from "./pages/notifications/Notifications";
 import Materials from "./pages/materials/Materials";
+import LectureNotesDepartments from "./pages/materials/LectureNotesDepartments";
+import LectureNotesDepartment from "./pages/materials/LectureNotesDepartment";
+import ModelPapersDepartment from "./pages/materials/ModelPapersDepartment";
+import PastPapersDepartment from "./pages/materials/PastPapersDepartment";
+import QuickSummary from "./pages/materials/QuickSummary";
+import ShortNotesDepartment from "./pages/materials/ShortNotesDepartment";
 import Certificates from "./pages/certificates/Certificates";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -20,6 +26,7 @@ import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import CommunityManagement from "./pages/admin/CommunityManagement";
 import Reports from "./pages/admin/Reports";
 import QuizAdmin from "./pages/admin/QuizAdmin";
+import MaterialManagement from "./pages/admin/MaterialManagement";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminLayout from "./components/layout/AdminLayout";
 
@@ -96,6 +103,54 @@ const AppRoutes = () => (
       }
     />
     <Route
+      path="/materials/quick-summary"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <QuickSummary />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/lecture-notes"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <LectureNotesDepartments />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/lecture-notes/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <LectureNotesDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/past-papers/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <PastPapersDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/model-papers/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <ModelPapersDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/materials/short-notes/:department"
+      element={
+        <ProtectedRoute roles={["student", "admin"]}>
+          <ShortNotesDepartment />
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/notifications"
       element={
         <ProtectedRoute roles={["student", "admin"]}>
@@ -122,6 +177,7 @@ const AppRoutes = () => (
     >
       <Route index element={<AdminDashboard />} />
       <Route path="courses" element={<ManageCourses />} />
+      <Route path="materials" element={<MaterialManagement />} />
       <Route path="users" element={<UserManagement />} />
       <Route path="modules" element={<ModuleManagement />} />
       <Route path="departments" element={<DepartmentManagement />} />

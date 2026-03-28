@@ -296,11 +296,11 @@ const createDepartment = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/modules
 // @access  Private/Admin
 const createModule = asyncHandler(async (req, res) => {
-    const { name, code, description, department } = req.body;
+    const { name, code, description, department, academicYear, academicSemester } = req.body;
 
-    if (!name?.trim() || !code?.trim() || !department) {
+    if (!name?.trim() || !code?.trim() || !department || !academicYear || !academicSemester) {
         res.status(400);
-        throw new Error('Name, code and department are required');
+        throw new Error('Name, code, department, academic year and academic semester are required');
     }
 
     const deptDoc = await Department.findById(department);
@@ -320,6 +320,8 @@ const createModule = asyncHandler(async (req, res) => {
         code: code.trim(),
         description: description?.trim() || '',
         department,
+        academicYear,
+        academicSemester,
     });
 
     await moduleDoc.populate('department', 'name');
@@ -330,12 +332,14 @@ const createModule = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/modules
 // @access  Private/Admin
 const getModules = asyncHandler(async (req, res) => {
-    const { department } = req.query;
+    const { department, academicYear, academicSemester } = req.query;
     const filter = {};
     if (department) filter.department = department;
+    if (academicYear) filter.academicYear = academicYear;
+    if (academicSemester) filter.academicSemester = academicSemester;
 
     const modules = await Module.find(filter)
-        .select('name code description department createdAt')
+        .select('name code description department academicYear academicSemester createdAt')
         .populate('department', 'name')
         .sort({ name: 1 });
 

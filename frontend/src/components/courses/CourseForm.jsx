@@ -3,9 +3,14 @@ import toast from 'react-hot-toast';
 import { courseApi } from '../../api/course.api';
 import { getDepartments, getModules } from '../../api/admin.api';
 
+const YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4'];
+const SEMESTER_OPTIONS = ['1st Semester', '2nd Semester'];
+
 const CourseForm = ({ course = null, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     departmentId: course?.moduleId?.department?._id || course?.moduleId?.department || '',
+    academicYear: course?.moduleId?.academicYear || '',
+    academicSemester: course?.moduleId?.academicSemester || '',
     moduleId: course?.moduleId?._id || '',
     title: course?.title || '',
     videoUrl: course?.videoUrl || '',
@@ -33,7 +38,11 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
       setDepartments(deptList);
 
       if (!formData.departmentId && deptList.length > 0) {
-        setFormData((prev) => ({ ...prev, departmentId: deptList[0]._id, moduleId: '' }));
+        setFormData((prev) => ({
+          ...prev,
+          departmentId: deptList[0]._id,
+          moduleId: '',
+        }));
       }
     } catch (error) {
       console.error('Fetch departments error:', error);
@@ -45,13 +54,18 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
   };
 
   useEffect(() => {
-    fetchModules(formData.departmentId);
-  }, [formData.departmentId]);
+    fetchModules(formData.departmentId, formData.academicYear, formData.academicSemester);
+  }, [formData.departmentId, formData.academicYear, formData.academicSemester]);
 
-  const fetchModules = async (departmentId = '') => {
+  const fetchModules = async (departmentId = '', academicYear = '', academicSemester = '') => {
     try {
       setLoadingModules(true);
-      const response = await getModules(departmentId ? { department: departmentId } : {});
+      const params = {};
+      if (departmentId) params.department = departmentId;
+      if (academicYear) params.academicYear = academicYear;
+      if (academicSemester) params.academicSemester = academicSemester;
+
+      const response = await getModules(params);
       setModules(response.modules || []);
     } catch (error) {
       console.error('Fetch modules error:', error);
@@ -74,6 +88,15 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
       return;
     }
 
+    if (name === 'academicYear' || name === 'academicSemester') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        moduleId: '',
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -91,6 +114,11 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
     // Validation
     if (!formData.moduleId) {
       toast.error('Please select a module');
+      return;
+    }
+
+    if (!formData.academicYear || !formData.academicSemester) {
+      toast.error('Please select academic year and semester');
       return;
     }
 
@@ -172,6 +200,45 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
         </div>
 
         {/* Module Selection */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Academic Year *
+            </label>
+            <select
+              name="academicYear"
+              value={formData.academicYear}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              required
+            >
+              <option value="">Select year...</option>
+              {YEAR_OPTIONS.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Academic Semester *
+            </label>
+            <select
+              name="academicSemester"
+              value={formData.academicSemester}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              required
+            >
+              <option value="">Select semester...</option>
+              {SEMESTER_OPTIONS.map((semester) => (
+                <option key={semester} value={semester}>{semester}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Module Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Module *
@@ -187,7 +254,7 @@ const CourseForm = ({ course = null, onSuccess, onCancel }) => {
             <option value="">Select a module...</option>
             {modules.map((module) => (
               <option key={module._id} value={module._id}>
-                {module.code} - {module.name} ({module?.department?.name || 'Unknown'})
+                {module.code} - {module.name}
               </option>
             ))}
           </select>
