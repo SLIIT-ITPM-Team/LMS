@@ -8,6 +8,7 @@ import CourseForm from '../../components/courses/CourseForm';
 const ManageCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -76,10 +77,13 @@ const ManageCourses = () => {
         department: selectedDepartment || undefined,
         moduleId: selectedModule || undefined,
       });
-      setCourses(response.data);
+      setCourses(Array.isArray(response.data) ? response.data : []);
+      setPagination(response.pagination || null);
     } catch (error) {
       console.error('Fetch courses error:', error);
       toast.error('Failed to load courses');
+      setCourses([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
@@ -132,7 +136,7 @@ const ManageCourses = () => {
     setEditingCourse(null);
   };
 
-  const filteredCourses = courses.data?.filter(course => {
+  const filteredCourses = courses.filter(course => {
     const moduleName = getModuleName(course).toLowerCase();
     const departmentName = getDepartmentName(course).toLowerCase();
     const matchesSearch =
@@ -147,7 +151,7 @@ const ManageCourses = () => {
     const matchesModule = !selectedModule || String(course?.moduleId?._id) === String(selectedModule);
 
     return matchesSearch && matchesDepartment && matchesModule;
-  }) || [];
+  });
 
   if (loading) {
     return (
@@ -260,7 +264,7 @@ const ManageCourses = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
             <p className="text-gray-600">
-              {courses.data?.length === 0 
+              {courses.length === 0 
                 ? "No courses have been created yet. Create your first course to get started." 
                 : "No courses match your current filters. Try adjusting your search criteria."}
             </p>
@@ -370,10 +374,10 @@ const ManageCourses = () => {
             </div>
 
             {/* Pagination */}
-            {courses.pagination && (
+            {pagination && (
               <div className="mt-6 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, courses.pagination.totalCourses)} of {courses.pagination.totalCourses} results
+                  Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, pagination.totalCourses)} of {pagination.totalCourses} results
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -385,7 +389,7 @@ const ManageCourses = () => {
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => prev + 1)}
-                    disabled={!courses.pagination.hasNextPage}
+                    disabled={!pagination.hasNextPage}
                     className="px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next

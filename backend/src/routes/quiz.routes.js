@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const mongoose = require('mongoose');
+const { protect, authorize } = require('../middlewares/auth.middleware');
 
 const Quiz = require('../models/Quiz');
 const { summarizeText } = require('../utils/summarize');
@@ -423,11 +424,57 @@ router.get('/', async (req, res) => {
         questionCount: quiz.questions.length,
         totalAttempts: quiz.totalAttempts,
         totalPasses: quiz.totalPasses,
-        createdAt: quiz.createdAt
+        createdAt: quiz.createdAt,
+        updatedAt: quiz.updatedAt
       }))
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message || 'Failed to fetch quizzes.' });
+  }
+});
+
+// Update quiz basic details
+router.put('/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    if (!ensureDatabaseConnected(res)) return;
+
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: 'Quiz not found.' });
+    }
+
+    const nextTitle = String(req.body.title || '').trim();
+    const nextSummary = normalizeSummary(req.body.summary);
+
+    if (!nextTitle) {
+      return res.status(400).json({ success: false, message: 'Title is required.' });
+    }
+
+    if (!nextSummary) {
+      return res.status(400).json({ success: false, message: 'Summary is required.' });
+    }
+
+    quiz.title = nextTitle;
+    quiz.summary = nextSummary;
+
+    const updatedQuiz = await quiz.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Quiz updated successfully.',
+      quiz: {
+        _id: updatedQuiz._id,
+        title: updatedQuiz.title,
+        summary: updatedQuiz.summary,
+        questionCount: updatedQuiz.questions.length,
+        totalAttempts: updatedQuiz.totalAttempts,
+        totalPasses: updatedQuiz.totalPasses,
+        createdAt: updatedQuiz.createdAt,
+        updatedAt: updatedQuiz.updatedAt,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to update quiz.' });
   }
 });
 
@@ -639,7 +686,7 @@ router.get('/stats/:userEmail', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     if (!ensureDatabaseConnected(res)) return;
 
