@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { BookOpen, FileText, Inbox } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar";
+import Footer from "../../components/layout/Footer";
 import MaterialHeader from "../../components/materials/MaterialHeader";
 import MaterialUploadForm from "../../components/materials/MaterialUploadForm";
 import SearchBar from "../../components/materials/SearchBar";
@@ -351,6 +352,8 @@ const Materials = () => {
 				isOpen={isSendMaterialOpen}
 				onClose={() => setIsSendMaterialOpen(false)}
 			/>
+
+			<Footer />
 		</div>
 	);
 };
