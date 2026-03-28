@@ -39,7 +39,7 @@ api.interceptors.response.use(
       // Network error - no response received
       console.error('Network Error:', error.request);
       if (isDevelopment) {
-        console.warn('Make sure the backend server is running on http://localhost:5001');
+        console.warn('Make sure the backend server is running on the Vite proxy target (VITE_API_PROXY_TARGET)');
       }
     } else {
       // Something else happened

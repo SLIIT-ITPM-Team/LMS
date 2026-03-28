@@ -6,6 +6,7 @@ import useAuth from '../../hooks/useAuth';
 const adminLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/courses', label: 'Course Management', icon: Layers3 },
+  { to: '/admin/materials', label: 'Materials', icon: FileText },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/modules', label: 'Modules', icon: Layers3 },
   { to: '/admin/departments', label: 'Departments', icon: Building2 },

@@ -5,6 +5,9 @@ import { courseApi } from '../../api/course.api';
 import { getDepartments, getModules } from '../../api/admin.api';
 import CourseForm from '../../components/courses/CourseForm';
 
+const YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4'];
+const SEMESTER_OPTIONS = ['1st Semester', '2nd Semester'];
+
 const ManageCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
@@ -12,6 +15,8 @@ const ManageCourses = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
+  const [selectedAcademicSemester, setSelectedAcademicSemester] = useState('');
   const [selectedModule, setSelectedModule] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,21 +26,21 @@ const ManageCourses = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, [currentPage]);
+  }, [currentPage, selectedDepartment, selectedAcademicYear, selectedAcademicSemester, selectedModule]);
 
   useEffect(() => {
     fetchDependencies();
   }, []);
 
   useEffect(() => {
-    if (!selectedDepartment) {
+    if (!selectedDepartment && !selectedAcademicYear && !selectedAcademicSemester) {
       setModules([]);
       setSelectedModule('');
       return;
     }
 
-    fetchModulesByDepartment(selectedDepartment);
-  }, [selectedDepartment]);
+    fetchFilteredModules(selectedDepartment, selectedAcademicYear, selectedAcademicSemester);
+  }, [selectedDepartment, selectedAcademicYear, selectedAcademicSemester]);
 
   const fetchDependencies = async () => {
     try {
@@ -48,9 +53,14 @@ const ManageCourses = () => {
     }
   };
 
-  const fetchModulesByDepartment = async (departmentId) => {
+  const fetchFilteredModules = async (departmentId, academicYear, academicSemester) => {
     try {
-      const res = await getModules({ department: departmentId });
+      const params = {};
+      if (departmentId) params.department = departmentId;
+      if (academicYear) params.academicYear = academicYear;
+      if (academicSemester) params.academicSemester = academicSemester;
+
+      const res = await getModules(params);
       setModules(res.modules || []);
       setSelectedModule('');
     } catch (error) {
@@ -75,6 +85,8 @@ const ManageCourses = () => {
         page: currentPage,
         limit: 10,
         department: selectedDepartment || undefined,
+        academicYear: selectedAcademicYear || undefined,
+        academicSemester: selectedAcademicSemester || undefined,
         moduleId: selectedModule || undefined,
       });
       setCourses(Array.isArray(response.data) ? response.data : []);
@@ -91,7 +103,6 @@ const ManageCourses = () => {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchCourses();
   };
 
   const handleDelete = async (courseId) => {
@@ -149,8 +160,10 @@ const ManageCourses = () => {
       String(course?.moduleId?.department?._id || course?.moduleId?.department) === String(selectedDepartment);
 
     const matchesModule = !selectedModule || String(course?.moduleId?._id) === String(selectedModule);
+    const matchesYear = !selectedAcademicYear || String(course?.moduleId?.academicYear) === String(selectedAcademicYear);
+    const matchesSemester = !selectedAcademicSemester || String(course?.moduleId?.academicSemester) === String(selectedAcademicSemester);
 
-    return matchesSearch && matchesDepartment && matchesModule;
+    return matchesSearch && matchesDepartment && matchesYear && matchesSemester && matchesModule;
   });
 
   if (loading) {
@@ -195,7 +208,7 @@ const ManageCourses = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search Courses
@@ -239,6 +252,38 @@ const ManageCourses = () => {
                   <option key={module._id} value={module._id}>
                     {module.code} - {module.name}
                   </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Year
+              </label>
+              <select
+                value={selectedAcademicYear}
+                onChange={(e) => setSelectedAcademicYear(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">All Years</option>
+                {YEAR_OPTIONS.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Semester
+              </label>
+              <select
+                value={selectedAcademicSemester}
+                onChange={(e) => setSelectedAcademicSemester(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">All Semesters</option>
+                {SEMESTER_OPTIONS.map((semester) => (
+                  <option key={semester} value={semester}>{semester}</option>
                 ))}
               </select>
             </div>
@@ -313,6 +358,7 @@ const ManageCourses = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
                             {getModuleName(course)}
+                            <div className="text-xs text-gray-400">{course?.moduleId?.academicYear || '-'} | {course?.moduleId?.academicSemester || '-'}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
