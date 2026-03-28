@@ -5,7 +5,12 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --brand-950: #0b1f3b;
+  --brand-900: #0f2a61;
+  --brand-700: #1a3fae;
+  --brand-500: #2f66f5;
+  --brand-100: #dbe8ff;
 }
 
 * {
@@ -22,24 +27,24 @@ body,
 
 body {
   font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
-  background: linear-gradient(180deg, #f8faff 0%, #eef2ff 52%, #ffffff 100%);
-  color: #111827;
+  background: linear-gradient(180deg, #f4f8ff 0%, #eaf1ff 48%, #ffffff 100%);
+  color: #0f172a;
 }
 
 .dark body {
-  background: #0f172a;
+  background: var(--brand-950);
   color: #e5e7eb;
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(47, 102, 245, 0.16);
 }
 
 .section-grid {
-  background-image: linear-gradient(to right, rgba(79, 70, 229, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(79, 70, 229, 0.08) 1px, transparent 1px);
+  background-image: linear-gradient(to right, rgba(47, 102, 245, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(47, 102, 245, 0.08) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
