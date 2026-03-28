@@ -26,7 +26,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-[#f4f6fb] px-4 py-6 md:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[240px_1fr]">
-        <aside className="rounded-2xl bg-gradient-to-b from-indigo-700 to-violet-700 p-4 text-white shadow-lg lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
+        <aside className="rounded-2xl bg-[#0B1F3B] p-4 text-white shadow-lg lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
           <div className="mb-6 border-b border-white/20 pb-4">
             <p className="text-xs uppercase tracking-[0.16em] text-indigo-100">Admin Panel</p>
             <h2 className="mt-1 text-lg font-semibold">EduFlow Admin</h2>
@@ -43,7 +43,7 @@ const AdminLayout = () => {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                      isActive ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-50 hover:bg-white/20'
+                      isActive ? 'bg-white text-[#0B1F3B] shadow-sm' : 'text-gray-100 hover:bg-white/20'
                     }`
                   }
                 >
@@ -55,12 +55,12 @@ const AdminLayout = () => {
           </nav>
 
           <div className="mt-6 rounded-xl border border-white/20 bg-white/10 p-3">
-            <p className="text-xs text-indigo-100">Signed in as</p>
+            <p className="text-xs text-gray-200">Signed in as</p>
             <p className="mt-1 truncate text-sm font-semibold">{user?.name || 'Admin User'}</p>
             <button
               type="button"
               onClick={handleLogout}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#0B1F3B] transition hover:bg-gray-100"
             >
               <LogOut className="h-4 w-4" />
               Logout
