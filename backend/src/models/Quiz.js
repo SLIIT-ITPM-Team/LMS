@@ -90,6 +90,18 @@ const quizSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    sourceType: {
+      type: String,
+      enum: ['summary', 'pdf'],
+      default: 'summary'
+    },
+    sourceDocument: {
+      originalName: { type: String, default: '' },
+      storedName: { type: String, default: '' },
+      mimeType: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+      extractedTextLength: { type: Number, default: 0 }
+    },
     questions: {
       type: [questionSchema],
       validate: {
