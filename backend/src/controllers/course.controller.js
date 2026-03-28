@@ -15,6 +15,8 @@ const createCourse = asyncHandler(async (req, res) => {
     title,
     videoUrl,
     departmentId,
+    academicYear,
+    academicSemester,
     manualTranscript,
     manualTranscriptText,
     transcriptText: transcriptTextFromBody,
@@ -33,6 +35,20 @@ const createCourse = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       message: 'Selected module does not belong to the selected department'
+    });
+  }
+
+  if (academicYear && module.academicYear !== academicYear) {
+    return res.status(400).json({
+      success: false,
+      message: 'Selected module does not match the selected academic year'
+    });
+  }
+
+  if (academicSemester && module.academicSemester !== academicSemester) {
+    return res.status(400).json({
+      success: false,
+      message: 'Selected module does not match the selected academic semester'
     });
   }
 
@@ -111,7 +127,7 @@ const createCourse = asyncHandler(async (req, res) => {
     // Populate module details
     await course.populate({
       path: 'moduleId',
-      select: 'code name department',
+      select: 'code name department academicYear academicSemester',
       populate: { path: 'department', select: 'name' },
     });
 
@@ -137,13 +153,18 @@ const createCourse = asyncHandler(async (req, res) => {
  * Both roles
  */
 const getAllCourses = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, moduleId, department } = req.query;
+  const { page = 1, limit = 10, moduleId, department, academicYear, academicSemester } = req.query;
   const skip = (page - 1) * limit;
 
   const filter = {};
 
-  if (department) {
-    const moduleIds = await Module.find({ department }).select('_id');
+  const moduleFilter = {};
+  if (department) moduleFilter.department = department;
+  if (academicYear) moduleFilter.academicYear = academicYear;
+  if (academicSemester) moduleFilter.academicSemester = academicSemester;
+
+  if (Object.keys(moduleFilter).length > 0) {
+    const moduleIds = await Module.find(moduleFilter).select('_id');
     const departmentModuleIds = moduleIds.map((mod) => String(mod._id));
 
     if (moduleId) {
@@ -159,7 +180,7 @@ const getAllCourses = asyncHandler(async (req, res) => {
     const courses = await Course.find(filter)
       .populate({
         path: 'moduleId',
-        select: 'code name department',
+        select: 'code name department academicYear academicSemester',
         populate: { path: 'department', select: 'name' },
       })
       .sort({ createdAt: -1 })
@@ -201,7 +222,7 @@ const getCourseById = asyncHandler(async (req, res) => {
     const course = await Course.findById(id)
       .populate({
         path: 'moduleId',
-        select: 'code name department',
+        select: 'code name department academicYear academicSemester',
         populate: { path: 'department', select: 'name' },
       });
 
@@ -243,9 +264,11 @@ const updateCourse = asyncHandler(async (req, res) => {
     title,
     videoUrl,
     regenerateTranscript,
-    regenerateSummary,
+    regenerateSummary: regenerateSummaryRequested,
     manualTranscriptText
   } = req.body;
+
+  let shouldRegenerateSummary = Boolean(regenerateSummaryRequested);
 
   try {
     const course = await Course.findById(id);
@@ -265,7 +288,7 @@ const updateCourse = asyncHandler(async (req, res) => {
       const transcript = manualTranscriptText.trim();
       if (transcript) {
         course.transcriptText = transcript;
-        regenerateSummary = true; // Auto-regenerate summary when transcript updated
+        shouldRegenerateSummary = true; // Auto-regenerate summary when transcript updated
       }
     }
 
@@ -280,7 +303,7 @@ const updateCourse = asyncHandler(async (req, res) => {
     }
 
     // Regenerate summary if requested or if transcript changed
-    if (regenerateSummary && course.transcriptText) {
+    if (shouldRegenerateSummary && course.transcriptText) {
       try {
         const summaryResult = processSummary(course.transcriptText, 500);
         course.summaryText = summaryResult.summary;
@@ -291,7 +314,7 @@ const updateCourse = asyncHandler(async (req, res) => {
     }
 
     // Regenerate PDF if summary changed
-    if (course.summaryText && (regenerateSummary || regenerateTranscript)) {
+    if (course.summaryText && (shouldRegenerateSummary || regenerateTranscript)) {
       try {
         // Delete old PDF if exists
         if (course.summaryPdfUrl) {

@@ -26,6 +26,7 @@ import DepartmentManagement from "./pages/admin/DepartmentManagement";
 import CommunityManagement from "./pages/admin/CommunityManagement";
 import Reports from "./pages/admin/Reports";
 import QuizAdmin from "./pages/admin/QuizAdmin";
+import MaterialManagement from "./pages/admin/MaterialManagement";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminLayout from "./components/layout/AdminLayout";
 
@@ -176,6 +177,7 @@ const AppRoutes = () => (
     >
       <Route index element={<AdminDashboard />} />
       <Route path="courses" element={<ManageCourses />} />
+      <Route path="materials" element={<MaterialManagement />} />
       <Route path="users" element={<UserManagement />} />
       <Route path="modules" element={<ModuleManagement />} />
       <Route path="departments" element={<DepartmentManagement />} />

@@ -2,18 +2,25 @@ import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { createModule, getDepartments, getModules } from '../../api/admin.api';
 
+const YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4'];
+const SEMESTER_OPTIONS = ['1st Semester', '2nd Semester'];
+
 const ModuleManagement = () => {
   const [departments, setDepartments] = useState([]);
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [filterDepartment, setFilterDepartment] = useState('');
+  const [filterAcademicYear, setFilterAcademicYear] = useState('');
+  const [filterAcademicSemester, setFilterAcademicSemester] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
     code: '',
     description: '',
     department: '',
+    academicYear: '',
+    academicSemester: '',
   });
 
   const loadDepartments = async () => {
@@ -22,18 +29,28 @@ const ModuleManagement = () => {
       const deptList = data?.departments || [];
       setDepartments(deptList);
 
-      if (!formData.department && deptList.length > 0) {
-        setFormData((prev) => ({ ...prev, department: deptList[0]._id }));
+      if (deptList.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          department: prev.department || deptList[0]._id,
+          academicYear: prev.academicYear || YEAR_OPTIONS[0],
+          academicSemester: prev.academicSemester || SEMESTER_OPTIONS[0],
+        }));
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to load departments');
     }
   };
 
-  const loadModules = async (department = filterDepartment) => {
+  const loadModules = async (department = filterDepartment, academicYear = filterAcademicYear, academicSemester = filterAcademicSemester) => {
     try {
       setLoading(true);
-      const data = await getModules(department ? { department } : {});
+      const params = {};
+      if (department) params.department = department;
+      if (academicYear) params.academicYear = academicYear;
+      if (academicSemester) params.academicSemester = academicSemester;
+
+      const data = await getModules(params);
       setModules(data?.modules || []);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to load modules');
@@ -48,8 +65,8 @@ const ModuleManagement = () => {
   }, []);
 
   useEffect(() => {
-    loadModules(filterDepartment);
-  }, [filterDepartment]);
+    loadModules(filterDepartment, filterAcademicYear, filterAcademicSemester);
+  }, [filterDepartment, filterAcademicYear, filterAcademicSemester]);
 
   const departmentNameMap = useMemo(() => {
     const map = new Map();
@@ -77,6 +94,8 @@ const ModuleManagement = () => {
         code: formData.code.trim().toUpperCase(),
         description: formData.description.trim(),
         department: formData.department,
+        academicYear: formData.academicYear,
+        academicSemester: formData.academicSemester,
       });
 
       toast.success('Module created successfully');
@@ -151,6 +170,36 @@ const ModuleManagement = () => {
             </div>
 
             <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Academic Year *</label>
+              <select
+                name="academicYear"
+                value={formData.academicYear}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
+                required
+              >
+                {YEAR_OPTIONS.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Academic Semester *</label>
+              <select
+                name="academicSemester"
+                value={formData.academicSemester}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
+                required
+              >
+                {SEMESTER_OPTIONS.map((semester) => (
+                  <option key={semester} value={semester}>{semester}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Description</label>
               <input
                 name="description"
@@ -176,18 +225,42 @@ const ModuleManagement = () => {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold text-slate-900">Modules</h2>
-            <select
-              value={filterDepartment}
-              onChange={(event) => setFilterDepartment(event.target.value)}
-              className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
-            >
-              <option value="">All departments</option>
-              {departments.map((dept) => (
-                <option key={dept._id} value={dept._id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={filterDepartment}
+                onChange={(event) => setFilterDepartment(event.target.value)}
+                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">All departments</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filterAcademicYear}
+                onChange={(event) => setFilterAcademicYear(event.target.value)}
+                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">All years</option>
+                {YEAR_OPTIONS.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+
+              <select
+                value={filterAcademicSemester}
+                onChange={(event) => setFilterAcademicSemester(event.target.value)}
+                className="rounded-xl border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">All semesters</option>
+                {SEMESTER_OPTIONS.map((semester) => (
+                  <option key={semester} value={semester}>{semester}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -216,6 +289,7 @@ const ModuleManagement = () => {
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{module.code}</p>
                         <p className="text-xs text-indigo-600">{deptName}</p>
+                        <p className="text-xs text-slate-500">{module.academicYear} | {module.academicSemester}</p>
                       </div>
                     </div>
                   </div>

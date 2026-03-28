@@ -15,6 +15,21 @@ export const getAllMaterials = async (params = {}) => {
   return data;
 };
 
+export const getMaterialHierarchy = async () => {
+  const { data } = await api.get("/api/materials/hierarchy");
+  return data;
+};
+
+export const getPendingMaterials = async () => {
+  const { data } = await api.get("/api/materials/admin/pending");
+  return data;
+};
+
+export const reviewMaterial = async (id, payload) => {
+  const { data } = await api.patch(`/api/materials/${id}/review`, payload);
+  return data;
+};
+
 export const searchMaterials = async (params = {}) => {
   const { data } = await api.get("/api/materials/search", { params });
   return data;
