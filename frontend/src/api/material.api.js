@@ -50,10 +50,24 @@ export const downloadMaterial = async (id) => {
     responseType: "blob",
   });
 
-  // Build a temporary URL and trigger download
+  // Build a temporary URL and trigger download.
+  // Support both `filename=` and RFC5987 `filename*=` header formats.
   const disposition = response.headers["content-disposition"] || "";
-  const match = disposition.match(/filename=\"?([^\";]+)\"?/);
-  const fileName = match ? match[1] : `material-${id}`;
+  const utf8FileNameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const quotedFileNameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+
+  let fileName = `material-${id}.pdf`;
+  if (utf8FileNameMatch?.[1]) {
+    fileName = decodeURIComponent(utf8FileNameMatch[1]);
+  } else if (quotedFileNameMatch?.[1]) {
+    fileName = quotedFileNameMatch[1];
+  }
+
+  const contentType = response.headers["content-type"] || "";
+  const isPdf = contentType.toLowerCase().includes("application/pdf");
+  if (isPdf && !/\.pdf$/i.test(fileName)) {
+    fileName = `${fileName}.pdf`;
+  }
 
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement("a");

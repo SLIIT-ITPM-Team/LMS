@@ -26,6 +26,76 @@ const getPasswordScore = (password) => {
 	return score;
 };
 
+const validateRegisterField = (name, value, form) => {
+	if (name === 'name') {
+		if (!value.trim()) return 'Name is required';
+		if (!nameRegex.test(value.trim())) return 'Name must be 2-50 letters only';
+	}
+
+	if (name === 'email') {
+		if (!value.trim()) return 'Email is required';
+		if (!emailRegex.test(value.trim())) return 'Please enter a valid email';
+	}
+
+	if (name === 'password') {
+		if (!value) return 'Password is required';
+		if (!passwordRegex.test(value)) return 'Min 8 chars with uppercase, lowercase, and number';
+	}
+
+	if (name === 'confirmPassword') {
+		if (!value) return 'Please confirm your password';
+		if (value !== form.password) return 'Passwords do not match';
+	}
+
+	if (name === 'department' && !value) {
+		return 'Please select a department';
+	}
+
+	if (name === 'acceptedTerms' && !value) {
+		return 'You must accept terms and conditions';
+	}
+
+	return '';
+};
+
+const mapBackendValidationErrors = (apiErrors = []) => {
+	const next = {};
+	apiErrors.forEach((item) => {
+		if (item?.path === 'name') next.name = item.msg;
+		if (item?.path === 'email') next.email = item.msg;
+		if (item?.path === 'password') next.password = item.msg;
+	});
+	return next;
+};
+
+const sanitizeNameInput = (value) =>
+	value
+		.replace(/[^A-Za-z\s]/g, '')
+		.replace(/\s{2,}/g, ' ')
+		.trimStart()
+		.slice(0, 50);
+
+const preventInvalidNameKeyDown = (event) => {
+	const allowedControlKeys = [
+		'Backspace',
+		'Delete',
+		'Tab',
+		'Enter',
+		'ArrowLeft',
+		'ArrowRight',
+		'ArrowUp',
+		'ArrowDown',
+		'Home',
+		'End',
+	];
+
+	if (event.ctrlKey || event.metaKey || event.altKey) return;
+	if (allowedControlKeys.includes(event.key)) return;
+	if (/^[A-Za-z\s]$/.test(event.key)) return;
+
+	event.preventDefault();
+};
+
 const Register = () => {
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
@@ -41,40 +111,117 @@ const Register = () => {
 		acceptedTerms: false,
 	});
 	const [errors, setErrors] = useState({});
+	const [touched, setTouched] = useState({});
 
 	const passwordScore = useMemo(() => getPasswordScore(form.password), [form.password]);
 
 	const validate = () => {
 		const next = {};
-		if (!nameRegex.test(form.name)) next.name = 'Name must be 2-50 letters only';
-		if (!emailRegex.test(form.email)) next.email = 'Please enter a valid email';
-		if (!passwordRegex.test(form.password)) {
-			next.password = 'Min 8 chars with uppercase, lowercase, and number';
-		}
-		if (form.confirmPassword !== form.password) next.confirmPassword = 'Passwords do not match';
-		if (!form.department) next.department = 'Please select a department';
-		if (!form.acceptedTerms) next.acceptedTerms = 'You must accept terms and conditions';
+		next.name = validateRegisterField('name', form.name, form);
+		next.email = validateRegisterField('email', form.email, form);
+		next.password = validateRegisterField('password', form.password, form);
+		next.confirmPassword = validateRegisterField('confirmPassword', form.confirmPassword, form);
+		next.department = validateRegisterField('department', form.department, form);
+		next.acceptedTerms = validateRegisterField('acceptedTerms', form.acceptedTerms, form);
+
+		Object.keys(next).forEach((key) => {
+			if (!next[key]) delete next[key];
+		});
+
 		setErrors(next);
 		return Object.keys(next).length === 0;
 	};
 
 	const handleChange = (event) => {
 		const { name, value, type, checked } = event.target;
+		let normalizedValue = type === 'checkbox' ? checked : type === 'email' ? value.trimStart() : value;
+
+		if (name === 'name' && typeof normalizedValue === 'string') {
+			normalizedValue = sanitizeNameInput(normalizedValue);
+		}
+
 		setForm((prev) => ({
 			...prev,
-			[name]: type === 'checkbox' ? checked : value,
+			[name]: normalizedValue,
 		}));
+
+		setErrors((prev) => {
+			const next = { ...prev };
+			if (touched[name]) {
+				const message = validateRegisterField(name, normalizedValue, { ...form, [name]: normalizedValue });
+				if (message) next[name] = message;
+				else delete next[name];
+			} else {
+				delete next[name];
+			}
+
+			if (name === 'password' && touched.confirmPassword) {
+				const confirmMessage = validateRegisterField('confirmPassword', form.confirmPassword, {
+					...form,
+					password: normalizedValue,
+				});
+				if (confirmMessage) next.confirmPassword = confirmMessage;
+				else delete next.confirmPassword;
+			}
+
+			return next;
+		});
+	};
+
+	const handleNamePaste = (event) => {
+		event.preventDefault();
+		const pastedText = event.clipboardData.getData('text');
+		const sanitized = sanitizeNameInput(pastedText);
+
+		setForm((prev) => ({
+			...prev,
+			name: sanitized,
+		}));
+
+		setErrors((prev) => {
+			const next = { ...prev };
+			if (touched.name) {
+				const message = validateRegisterField('name', sanitized, { ...form, name: sanitized });
+				if (message) next.name = message;
+				else delete next.name;
+			} else {
+				delete next.name;
+			}
+			return next;
+		});
+	};
+
+	const handleBlur = (event) => {
+		const { name, value, type, checked } = event.target;
+		const normalizedValue = type === 'checkbox' ? checked : value;
+
+		setTouched((prev) => ({ ...prev, [name]: true }));
+		const message = validateRegisterField(name, normalizedValue, { ...form, [name]: normalizedValue });
+		setErrors((prev) => {
+			const next = { ...prev };
+			if (message) next[name] = message;
+			else delete next[name];
+			return next;
+		});
 	};
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
+		setTouched({
+			name: true,
+			email: true,
+			password: true,
+			confirmPassword: true,
+			department: true,
+			acceptedTerms: true,
+		});
 		if (!validate()) return;
 
 		setLoading(true);
 		try {
 			await authApi.register({
-				name: form.name,
-				email: form.email,
+				name: form.name.trim(),
+				email: form.email.trim(),
 				password: form.password,
 				department: form.department,
 				role: 'student',
@@ -83,6 +230,10 @@ const Register = () => {
 			toast.success('Registration successful. Please login.');
 			navigate('/login', { replace: true });
 		} catch (error) {
+			const backendErrors = mapBackendValidationErrors(error?.response?.data?.errors);
+			if (Object.keys(backendErrors).length) {
+				setErrors((prev) => ({ ...prev, ...backendErrors }));
+			}
 			const message = error?.response?.data?.message || 'Registration failed';
 			toast.error(message);
 		} finally {
@@ -131,6 +282,10 @@ const Register = () => {
 									name="name"
 									value={form.name}
 									onChange={handleChange}
+									onBlur={handleBlur}
+									onKeyDown={preventInvalidNameKeyDown}
+									onPaste={handleNamePaste}
+									maxLength={50}
 									placeholder="Your full name"
 									className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 								/>
@@ -150,6 +305,7 @@ const Register = () => {
 									type="email"
 									value={form.email}
 									onChange={handleChange}
+									onBlur={handleBlur}
 									placeholder="you@example.com"
 									className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 								/>
@@ -170,6 +326,7 @@ const Register = () => {
 								type={showPassword ? 'text' : 'password'}
 								value={form.password}
 								onChange={handleChange}
+								onBlur={handleBlur}
 								placeholder="Choose a strong password"
 								className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 							/>
@@ -210,6 +367,7 @@ const Register = () => {
 								type={showConfirmPassword ? 'text' : 'password'}
 								value={form.confirmPassword}
 								onChange={handleChange}
+								onBlur={handleBlur}
 								placeholder="Re-enter password"
 								className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 							/>
@@ -234,6 +392,7 @@ const Register = () => {
 							name="department"
 							value={form.department}
 							onChange={handleChange}
+							onBlur={handleBlur}
 							className="w-full rounded-full border border-white/45 bg-[#072343]/55 px-4 py-2.5 text-sm text-white outline-none"
 						>
 							{departments.map((dept) => (
@@ -251,6 +410,7 @@ const Register = () => {
 							name="acceptedTerms"
 							checked={form.acceptedTerms}
 							onChange={handleChange}
+							onBlur={handleBlur}
 							className="h-4 w-4 rounded border-white/50 bg-white/20 text-[#0B1F3B] accent-[#0B1F3B]"
 						/>
 						I agree to the terms and conditions

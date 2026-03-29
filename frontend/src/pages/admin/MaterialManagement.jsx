@@ -254,6 +254,44 @@ const MaterialManagement = () => {
                     </div>
 
                     <div className="w-full max-w-xs space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleReview(material._id, 'approve')}
+                          disabled={savingReviewId === material._id}
+                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                        >
+                          {savingReviewId === material._id ? 'Publishing...' : 'Approve & Publish'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await openMaterialInNewTab(material._id);
+                            } catch (error) {
+                              toast.error(error?.response?.data?.message || 'Failed to open material');
+                            }
+                          }}
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                        >
+                          View Material
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await downloadMaterial(material._id);
+                            } catch (error) {
+                              toast.error(error?.response?.data?.message || 'Failed to download material');
+                            }
+                          }}
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                        >
+                          Download
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-500">Approved materials are published to students. Pending materials remain hidden from users.</p>
+
                       <textarea
                         rows={2}
                         placeholder="Review note (optional)"
@@ -267,14 +305,6 @@ const MaterialManagement = () => {
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       />
                       <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleReview(material._id, 'approve')}
-                          disabled={savingReviewId === material._id}
-                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
                         <button
                           type="button"
                           onClick={() => handleReview(material._id, 'reject')}
