@@ -356,7 +356,11 @@ const downloadMaterial = async (req, res) => {
     const isHttp = /^https?:\/\//i.test(fileUrl);
     const fallbackName = `material-${id}.pdf`;
     const baseName = (material.originalFileName || fallbackName).replace(/[\r\n]/g, '').trim();
-    const encodedName = encodeURIComponent(baseName);
+    const safeFileName = /\.[A-Za-z0-9]{2,5}$/.test(baseName)
+      ? baseName
+      : `${baseName}.pdf`;
+    const asciiFileName = safeFileName.replace(/[^\x20-\x7E]/g, '_');
+    const encodedName = encodeURIComponent(safeFileName);
     const contentTypeByFileType = {
       pdf: 'application/pdf',
       doc: 'application/msword',
@@ -366,7 +370,10 @@ const downloadMaterial = async (req, res) => {
     const dispositionType = mode === 'view' ? 'inline' : 'attachment';
 
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `${dispositionType}; filename*=UTF-8''${encodedName}`);
+    res.setHeader(
+      'Content-Disposition',
+      `${dispositionType}; filename="${asciiFileName}"; filename*=UTF-8''${encodedName}`
+    );
 
     if (!isHttp && fileUrl) {
       const absolutePath = path.isAbsolute(fileUrl)
