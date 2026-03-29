@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
+  deleteMaterial,
+  downloadMaterial,
+  getAllMaterials,
   getMaterialHierarchy,
   getPendingMaterials,
+  openMaterialInNewTab,
   reviewMaterial,
+  updateMaterial,
   uploadMaterial,
 } from '../../api/material.api';
 
@@ -29,6 +34,7 @@ const getModuleDepartmentId = (module) => {
 
 const MaterialManagement = () => {
   const [pendingMaterials, setPendingMaterials] = useState([]);
+  const [existingMaterials, setExistingMaterials] = useState([]);
   const [hierarchy, setHierarchy] = useState({ departments: [], modules: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
@@ -36,13 +42,20 @@ const MaterialManagement = () => {
   const [savingReviewId, setSavingReviewId] = useState('');
   const [formData, setFormData] = useState(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingMaterialId, setEditingMaterialId] = useState('');
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    materialType: '',
+  });
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [pendingResponse, hierarchyResponse] = await Promise.all([
+      const [pendingResponse, hierarchyResponse, allResponse] = await Promise.all([
         getPendingMaterials(),
         getMaterialHierarchy(),
+        getAllMaterials({ page: 1, limit: 300, sort: 'latest' }),
       ]);
 
       setPendingMaterials(pendingResponse?.data || []);
@@ -50,6 +63,7 @@ const MaterialManagement = () => {
         departments: hierarchyResponse?.data?.departments || [],
         modules: hierarchyResponse?.data?.modules || [],
       });
+      setExistingMaterials(allResponse?.data || []);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to load materials data');
     } finally {
@@ -142,6 +156,48 @@ const MaterialManagement = () => {
     }
   };
 
+  const startEdit = (material) => {
+    setEditingMaterialId(material._id);
+    setEditForm({
+      title: material.title || '',
+      description: material.description || '',
+      materialType: material.materialType || '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingMaterialId('');
+    setEditForm({ title: '', description: '', materialType: '' });
+  };
+
+  const saveEdit = async (materialId) => {
+    try {
+      await updateMaterial(materialId, {
+        title: editForm.title,
+        description: editForm.description,
+        materialType: editForm.materialType,
+      });
+      toast.success('Material updated successfully');
+      cancelEdit();
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update material');
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId) => {
+    const confirmed = window.confirm('Delete this material permanently?');
+    if (!confirmed) return;
+
+    try {
+      await deleteMaterial(materialId);
+      toast.success('Material deleted successfully');
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to delete material');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -158,6 +214,15 @@ const MaterialManagement = () => {
           }`}
         >
           Pending Review
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('existing')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+            activeTab === 'existing' ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-700'
+          }`}
+        >
+          Existing Materials
         </button>
         <button
           type="button"
@@ -223,6 +288,140 @@ const MaterialManagement = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'existing' ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          {isLoading ? (
+            <p className="text-sm text-slate-500">Loading existing materials...</p>
+          ) : existingMaterials.length === 0 ? (
+            <p className="text-sm text-slate-500">No materials uploaded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {existingMaterials.map((material) => {
+                const statusStyles = {
+                  approved: 'bg-emerald-100 text-emerald-700',
+                  pending: 'bg-amber-100 text-amber-700',
+                  rejected: 'bg-rose-100 text-rose-700',
+                };
+                const isEditing = editingMaterialId === material._id;
+                return (
+                  <div key={material._id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex-1 min-w-[250px]">
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <input
+                              value={editForm.title}
+                              onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              placeholder="Title"
+                            />
+                            <select
+                              value={editForm.materialType}
+                              onChange={(event) => setEditForm((prev) => ({ ...prev, materialType: event.target.value }))}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            >
+                              {MATERIAL_TYPES.map((type) => (
+                                <option key={type} value={type}>{type}</option>
+                              ))}
+                            </select>
+                            <textarea
+                              rows={2}
+                              value={editForm.description}
+                              onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              placeholder="Description"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => saveEdit(material._id)}
+                                className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white"
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEdit}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm font-semibold text-slate-900">{material.title}</p>
+                            <p className="text-xs text-slate-500">
+                              {material.moduleCode || '-'} | {material.academicYear || '-'} | {material.academicSemester || '-'}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600">{material.description || 'No description'}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Uploaded by {material?.uploadedBy?.name || 'Unknown user'}
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => startEdit(material)}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMaterial(material._id)}
+                                className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-700"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await openMaterialInNewTab(material._id);
+                                  } catch (error) {
+                                    toast.error(error?.response?.data?.message || 'Failed to open material');
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                              >
+                                View
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await downloadMaterial(material._id);
+                                  } catch (error) {
+                                    toast.error(error?.response?.data?.message || 'Failed to download material');
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                            statusStyles[material.submissionStatus] || 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {material.submissionStatus || 'unknown'}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(material.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
