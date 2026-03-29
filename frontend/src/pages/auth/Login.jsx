@@ -7,6 +7,28 @@ import useAuth from '../../hooks/useAuth';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const validateLoginField = (name, value) => {
+	if (name === 'email') {
+		if (!value.trim()) return 'Email is required';
+		if (!emailRegex.test(value.trim())) return 'Please enter a valid email address';
+	}
+
+	if (name === 'password') {
+		if (!value) return 'Password is required';
+	}
+
+	return '';
+};
+
+const mapBackendValidationErrors = (apiErrors = []) => {
+	const next = {};
+	apiErrors.forEach((item) => {
+		if (item?.path === 'email') next.email = item.msg;
+		if (item?.path === 'password') next.password = item.msg;
+	});
+	return next;
+};
+
 const Login = () => {
 	const { login } = useAuth();
 	const navigate = useNavigate();
@@ -20,6 +42,7 @@ const Login = () => {
 		rememberMe: false,
 	});
 	const [errors, setErrors] = useState({});
+	const [touched, setTouched] = useState({});
 
 	const redirectTo = useMemo(() => {
 		if (typeof location.state?.from === 'string') {
@@ -30,8 +53,13 @@ const Login = () => {
 
 	const validate = () => {
 		const next = {};
-		if (!emailRegex.test(form.email)) next.email = 'Please enter a valid email address';
-		if (!form.password.trim()) next.password = 'Password is required';
+		next.email = validateLoginField('email', form.email);
+		next.password = validateLoginField('password', form.password);
+
+		Object.keys(next).forEach((key) => {
+			if (!next[key]) delete next[key];
+		});
+
 		setErrors(next);
 		return Object.keys(next).length === 0;
 	};
@@ -40,17 +68,46 @@ const Login = () => {
 		const { name, value, type, checked } = event.target;
 		setForm((prev) => ({
 			...prev,
-			[name]: type === 'checkbox' ? checked : value,
+			[name]: type === 'checkbox' ? checked : type === 'email' ? value.trimStart() : value,
 		}));
+
+		if (name !== 'rememberMe') {
+			setErrors((prev) => {
+				const next = { ...prev };
+				if (touched[name]) {
+					const message = validateLoginField(name, type === 'checkbox' ? checked : value);
+					if (message) next[name] = message;
+					else delete next[name];
+				} else {
+					delete next[name];
+				}
+				return next;
+			});
+		}
+	};
+
+	const handleBlur = (event) => {
+		const { name, value, type, checked } = event.target;
+		if (name === 'rememberMe') return;
+
+		setTouched((prev) => ({ ...prev, [name]: true }));
+		const message = validateLoginField(name, type === 'checkbox' ? checked : value);
+		setErrors((prev) => {
+			const next = { ...prev };
+			if (message) next[name] = message;
+			else delete next[name];
+			return next;
+		});
 	};
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
+		setTouched({ email: true, password: true });
 		if (!validate()) return;
 
 		setLoading(true);
 		try {
-			const data = await login({ email: form.email, password: form.password });
+			const data = await login({ email: form.email.trim(), password: form.password });
 			toast.success('Login successful');
 
 			if (data.user.role === 'admin') {
@@ -59,6 +116,10 @@ const Login = () => {
 				navigate(redirectTo, { replace: true });
 			}
 		} catch (error) {
+			const backendErrors = mapBackendValidationErrors(error?.response?.data?.errors);
+			if (Object.keys(backendErrors).length) {
+				setErrors((prev) => ({ ...prev, ...backendErrors }));
+			}
 			const message = error?.response?.data?.message || 'Invalid credentials';
 			toast.error(message);
 		} finally {
@@ -107,6 +168,7 @@ const Login = () => {
 								type="email"
 								value={form.email}
 								onChange={handleChange}
+								onBlur={handleBlur}
 								placeholder="you@example.com"
 								className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 							/>
@@ -126,6 +188,7 @@ const Login = () => {
 								type={showPassword ? 'text' : 'password'}
 								value={form.password}
 								onChange={handleChange}
+								onBlur={handleBlur}
 								placeholder="Enter your password"
 								className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/65"
 							/>
