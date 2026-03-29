@@ -3,7 +3,7 @@ import { ChevronLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/layout/Navbar";
-import { getAllMaterials } from "../../api/material.api";
+import { downloadMaterial, getAllMaterials, openMaterialInNewTab } from "../../api/material.api";
 
 const YEAR_OPTIONS = ["Year 1", "Year 2", "Year 3", "Year 4"];
 
@@ -152,10 +152,29 @@ const DepartmentMaterialsPage = ({ materialType, headingLabel, buttonLabel }) =>
                     </p>
                     <button
                       type="button"
-                      onClick={() => material.fileUrl && window.open(material.fileUrl, "_blank", "noopener,noreferrer")}
+                      onClick={async () => {
+                        try {
+                          await openMaterialInNewTab(material._id);
+                        } catch (error) {
+                          toast.error(error?.response?.data?.message || "Failed to open material");
+                        }
+                      }}
                       className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       {buttonLabel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await downloadMaterial(material._id);
+                        } catch (error) {
+                          toast.error(error?.response?.data?.message || "Failed to download material");
+                        }
+                      }}
+                      className="mt-3 ml-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      Download
                     </button>
                   </article>
                 ))}

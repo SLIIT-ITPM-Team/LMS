@@ -338,6 +338,7 @@ const searchMaterials = async (req, res) => {
 const downloadMaterial = async (req, res) => {
   try {
     const { id } = req.params;
+    const mode = req.query.mode === 'view' ? 'view' : 'download';
     const material = await Material.findById(id);
 
     if (!material) {
@@ -353,10 +354,19 @@ const downloadMaterial = async (req, res) => {
 
     const fileUrl = material.fileUrl;
     const isHttp = /^https?:\/\//i.test(fileUrl);
+    const fallbackName = `material-${id}.pdf`;
+    const baseName = (material.originalFileName || fallbackName).replace(/[\r\n]/g, '').trim();
+    const encodedName = encodeURIComponent(baseName);
+    const contentTypeByFileType = {
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    const contentType = contentTypeByFileType[material.fileType] || 'application/octet-stream';
+    const dispositionType = mode === 'view' ? 'inline' : 'attachment';
 
-    if (req.query.redirect === 'true' && isHttp) {
-      return res.redirect(fileUrl);
-    }
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `${dispositionType}; filename*=UTF-8''${encodedName}`);
 
     if (!isHttp && fileUrl) {
       const absolutePath = path.isAbsolute(fileUrl)
@@ -370,11 +380,17 @@ const downloadMaterial = async (req, res) => {
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Download URL ready.',
-      data: { fileUrl },
-    });
+    if (isHttp) {
+      const upstreamResponse = await fetch(fileUrl);
+      if (!upstreamResponse.ok) {
+        return res.status(502).json({ success: false, message: 'Failed to fetch file from storage provider.' });
+      }
+
+      const arrayBuffer = await upstreamResponse.arrayBuffer();
+      return res.status(200).send(Buffer.from(arrayBuffer));
+    }
+
+    return res.status(404).json({ success: false, message: 'File not found.' });
   } catch (error) {
     console.error('downloadMaterial error:', error);
     return res.status(500).json({ success: false, message: 'Failed to prepare download.' });
