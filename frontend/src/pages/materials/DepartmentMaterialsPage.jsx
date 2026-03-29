@@ -58,8 +58,10 @@ const DepartmentMaterialsPage = ({ materialType, headingLabel, buttonLabel }) =>
         });
 
         const rows = response?.data || [];
-        const filtered = rows.filter((item) =>
-          matchesDepartmentCode(item?.department?.name || "", departmentCode)
+        const filtered = rows.filter(
+          (item) =>
+            item?.submissionStatus === "approved" &&
+            matchesDepartmentCode(item?.department?.name || "", departmentCode)
         );
 
         setMaterials(filtered);
