@@ -46,7 +46,7 @@ export const getMaterialById = async (id) => {
 };
 
 export const downloadMaterial = async (id) => {
-  const response = await api.get(`/api/materials/${id}/download`, {
+  const response = await api.get(`/api/materials/${id}/download?mode=download`, {
     responseType: "blob",
   });
 
@@ -63,6 +63,23 @@ export const downloadMaterial = async (id) => {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+
+  return true;
+};
+
+export const openMaterialInNewTab = async (id) => {
+  const response = await api.get(`/api/materials/${id}/download?mode=view`, {
+    responseType: "blob",
+  });
+
+  const contentType = response.headers["content-type"] || "application/pdf";
+  const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+  window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+  // Give the new tab time to consume the blob URL before revoking.
+  setTimeout(() => {
+    window.URL.revokeObjectURL(blobUrl);
+  }, 60_000);
 
   return true;
 };
