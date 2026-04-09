@@ -350,13 +350,24 @@ const QuizCard = () => {
 
         {!loading && quiz?.questions?.length ? (
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-200">
-                Question {currentQuestion + 1} / {quiz.questions.length}
-              </span>
-              <span className="rounded-full bg-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-200">
-                {question?.difficulty || 'medium'}
-              </span>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 rounded-full border border-cyan-100 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-1.5 shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500"></span>
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-cyan-700">
+                  Question <span className="text-cyan-900">{currentQuestion + 1}</span> / {quiz.questions.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full border border-violet-100 bg-gradient-to-r from-violet-50 to-fuchsia-50 px-4 py-1.5 shadow-sm">
+                <svg className="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-wider text-violet-700">
+                  {question?.difficulty || 'medium'}
+                </span>
+              </div>
             </div>
 
             <AnimatePresence mode="wait">
