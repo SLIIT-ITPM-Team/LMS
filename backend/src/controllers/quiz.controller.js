@@ -6,7 +6,15 @@ const mongoose = require('mongoose');
 const Quiz = require('../models/Quiz');
 const { summarizeText } = require('../utils/summarize');
 const openAIService = require('../services/openai.service');
-const quizGenService = require('../services/quizgen.service');
+const {
+	normalizeSummary,
+	extractKeywords,
+	createContextualQuestions,
+	createQuizTitle,
+	sanitizeQuestionsForClient,
+	evaluateQuizAnswers,
+	createCertificateId,
+} = require('../services/quizgen.service');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
@@ -256,25 +264,7 @@ const attemptQuiz = async (req, res) => {
 		const perUserPreviousAttempts = quiz.attempts.filter((attempt) => attempt.userEmail === userEmail).length;
 		const attemptNumber = perUserPreviousAttempts + 1;
 
-		const evaluatedAnswers = quiz.questions.map((question, index) => {
-			const payload = Array.isArray(answers)
-				? answers[index]
-				: answers[index + 1] ?? answers[String(index + 1)] ?? answers[index] ?? answers[String(index)];
-			const selectedAnswer = resolveSelectedAnswer(question, payload);
-			const isCorrect = selectedAnswer.toLowerCase() === String(question.correctAnswer || '').toLowerCase();
-
-			return {
-				questionNumber: index + 1,
-				questionText: question.questionText,
-				selectedAnswer,
-				correctAnswer: question.correctAnswer,
-				isCorrect
-			};
-		});
-
-		const correctCount = evaluatedAnswers.filter((item) => item.isCorrect).length;
-		const scorePercentage = Math.round((correctCount / quiz.questions.length) * 100);
-		const passed = scorePercentage >= 60;
+		const { evaluatedAnswers, correctCount, scorePercentage, passed } = evaluateQuizAnswers(quiz.questions, answers, userEmail);
 		const certificateId = passed ? createCertificateId(userEmail, quiz._id, attemptNumber) : null;
 
 		quiz.attempts.push({
