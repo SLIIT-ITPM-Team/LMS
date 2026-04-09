@@ -31,6 +31,8 @@ const upload = multer({
 
 router.post('/upload', upload.single('pdf'), quizController.createQuizFromPdf);
 router.post('/from-summary', quizController.createQuizFromSummary);
+router.post('/creative', quizController.createCreativeQuiz);
+router.post('/creative-pdf', upload.single('pdf'), quizController.createCreativeQuizFromPdf);
 router.get('/', quizController.getAllQuizzes);
 router.put('/:id', protect, authorize('admin'), quizController.updateQuiz);
 router.get('/:id', quizController.getQuizById);

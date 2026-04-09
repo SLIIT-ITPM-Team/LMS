@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 
 const Quiz = require('../models/Quiz');
 const { summarizeText } = require('../utils/summarize');
+const openAIService = require('../services/openai.service');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
@@ -678,10 +679,234 @@ const deleteQuiz = async (req, res) => {
 	}
 };
 
+/**
+ * Generate a creative quiz using OpenAI
+ * This endpoint uses AI to create engaging, thought-provoking questions
+ */
+const createCreativeQuiz = async (req, res) => {
+	try {
+		if (!ensureDatabaseConnected(res)) return;
+
+		const {
+			topic,
+			content,
+			questionCount = 10,
+			difficulty = 'medium',
+			questionType = 'mixed'
+		} = req.body;
+
+		// Validate required fields
+		if (!topic || !topic.trim()) {
+			return res.status(400).json({
+				success: false,
+				message: 'Topic is required for creative quiz generation.'
+			});
+		}
+
+		// Validate question count
+		const count = parseInt(questionCount, 10);
+		if (isNaN(count) || count < 1 || count > 20) {
+			return res.status(400).json({
+				success: false,
+				message: 'Question count must be between 1 and 20.'
+			});
+		}
+
+		// Validate difficulty
+		const validDifficulties = ['easy', 'medium', 'hard'];
+		if (!validDifficulties.includes(difficulty.toLowerCase())) {
+			return res.status(400).json({
+				success: false,
+				message: 'Difficulty must be one of: easy, medium, hard.'
+			});
+		}
+
+		// Validate question type
+		const validTypes = ['multiple_choice', 'true_false', 'mixed'];
+		if (!validTypes.includes(questionType.toLowerCase())) {
+			return res.status(400).json({
+				success: false,
+				message: 'Question type must be one of: multiple_choice, true_false, mixed.'
+			});
+		}
+
+		// Use OpenAI to generate creative questions
+		const questions = await openAIService.generateCreativeQuiz({
+			topic: topic.trim(),
+			content: content ? normalizeSummary(content) : '',
+			questionCount: count,
+			difficulty: difficulty.toLowerCase(),
+			questionType: questionType.toLowerCase()
+		});
+
+		// Generate a creative title
+		const title = await openAIService.generateQuizTitle(topic.trim(), content || '');
+
+		// Create the quiz in the database
+		const quiz = await Quiz.create({
+			title,
+			summary: content ? normalizeSummary(content) : `Creative quiz about ${topic.trim()}`,
+			sourceType: 'ai_generated',
+			questions,
+			metadata: {
+				generatedBy: 'openai',
+				requestedDifficulty: difficulty.toLowerCase(),
+				requestedType: questionType.toLowerCase(),
+				topic: topic.trim()
+			}
+		});
+
+		return res.status(201).json({
+			success: true,
+			message: 'Creative quiz generated successfully using AI!',
+			quiz: {
+				_id: quiz._id,
+				title: quiz.title,
+				summary: quiz.summary,
+				questionCount: quiz.questions.length,
+				sourceType: quiz.sourceType,
+				questions: quiz.questions,
+				createdAt: quiz.createdAt
+			}
+		});
+	} catch (error) {
+		console.error('Creative quiz generation error:', error);
+
+		// Handle specific error cases
+		if (error.message.includes('not configured')) {
+			return res.status(503).json({
+				success: false,
+				message: 'AI quiz generation is not available. Please configure the OpenAI API key.'
+			});
+		}
+
+		if (error.message.includes('API error')) {
+			return res.status(502).json({
+				success: false,
+				message: 'Failed to connect to AI service. Please try again later.'
+			});
+		}
+
+		return res.status(500).json({
+			success: false,
+			message: error.message || 'Failed to generate creative quiz.'
+		});
+	}
+};
+
+/**
+ * Generate creative quiz from PDF using OpenAI
+ * Combines PDF content extraction with AI-powered question generation
+ */
+const createCreativeQuizFromPdf = async (req, res) => {
+	try {
+		if (!ensureDatabaseConnected(res)) return;
+
+		if (!req.file) {
+			return res.status(400).json({ success: false, message: 'No PDF file uploaded.' });
+		}
+
+		const {
+			topic,
+			questionCount = 10,
+			difficulty = 'medium',
+			questionType = 'mixed'
+		} = req.body;
+
+		// Extract text from PDF
+		const dataBuffer = fs.readFileSync(req.file.path);
+		const parsedPdf = await pdfParse(dataBuffer);
+		const rawText = normalizeSummary(parsedPdf.text);
+
+		if (!rawText) {
+			return res.status(400).json({
+				success: false,
+				message: 'Unable to extract text from the uploaded PDF.'
+			});
+		}
+
+		// Use the provided topic or generate one from the content
+		const quizTopic = topic || rawText.slice(0, 100);
+
+		// Use OpenAI to generate creative questions from PDF content
+		const questions = await openAIService.generateCreativeQuiz({
+			topic: quizTopic,
+			content: rawText,
+			questionCount: parseInt(questionCount, 10) || 10,
+			difficulty: difficulty || 'medium',
+			questionType: questionType || 'mixed'
+		});
+
+		// Generate a creative title
+		const title = await openAIService.generateQuizTitle(quizTopic, rawText);
+
+		// Create summary
+		const summary = summarizeText(rawText, 5);
+		const keywords = extractKeywords(summary);
+
+		const quiz = await Quiz.create({
+			title,
+			summary,
+			sourceType: 'ai_generated_pdf',
+			sourceDocument: {
+				originalName: req.file.originalname || '',
+				storedName: req.file.filename || '',
+				mimeType: req.file.mimetype || '',
+				size: req.file.size || 0,
+				extractedTextLength: rawText.length
+			},
+			questions,
+			metadata: {
+				generatedBy: 'openai',
+				requestedDifficulty: difficulty || 'medium',
+				requestedType: questionType || 'mixed'
+			}
+		});
+
+		return res.status(201).json({
+			success: true,
+			message: 'Creative quiz generated from PDF using AI!',
+			quiz: {
+				_id: quiz._id,
+				title: quiz.title,
+				summary: quiz.summary,
+				questionCount: quiz.questions.length,
+				sourceType: quiz.sourceType,
+				questions: quiz.questions,
+				createdAt: quiz.createdAt
+			}
+		});
+	} catch (error) {
+		console.error('Creative PDF quiz generation error:', error);
+
+		if (error.message.includes('not configured')) {
+			return res.status(503).json({
+				success: false,
+				message: 'AI quiz generation is not available. Please configure the OpenAI API key.'
+			});
+		}
+
+		return res.status(500).json({
+			success: false,
+			message: error.message || 'Failed to generate creative quiz from PDF.'
+		});
+	} finally {
+		if (req.file?.path && fs.existsSync(req.file.path)) {
+			try {
+				fs.unlinkSync(req.file.path);
+			} catch {
+				// Ignore cleanup errors
+			}
+		}
+	}
+};
+
 module.exports = {
 	uploadsDir,
 	createQuizFromPdf,
 	createQuizFromSummary,
+	createCreativeQuiz,
+	createCreativeQuizFromPdf,
 	getAllQuizzes,
 	updateQuiz,
 	getQuizById,
