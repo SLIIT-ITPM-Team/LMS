@@ -189,6 +189,7 @@ const QuizCard = () => {
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [flaggedQuestions, setFlaggedQuestions] = useState({});
   const [result, setResult] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
 
@@ -229,6 +230,13 @@ const QuizCard = () => {
     setAnswers((previous) => ({
       ...previous,
       [currentQuestion + 1]: selectedText
+    }));
+  };
+
+  const handleToggleFlag = () => {
+    setFlaggedQuestions((prev) => ({
+      ...prev,
+      [currentQuestion + 1]: !prev[currentQuestion + 1]
     }));
   };
 
@@ -362,13 +370,29 @@ const QuizCard = () => {
                     Question <span className="text-cyan-900">{currentQuestion + 1}</span> / {quiz.questions.length}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-full border border-violet-100 bg-gradient-to-r from-violet-50 to-fuchsia-50 px-4 py-1.5 shadow-sm">
-                  <svg className="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <span className="text-xs font-bold uppercase tracking-wider text-violet-700">
-                    {question?.difficulty || 'medium'}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleFlag}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition shadow-sm ${
+                      flaggedQuestions[currentQuestion + 1]
+                        ? 'border-red-200 bg-red-50 text-red-600'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <svg className="h-3.5 w-3.5" fill={flaggedQuestions[currentQuestion + 1] ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                    </svg>
+                    {flaggedQuestions[currentQuestion + 1] ? 'Flagged' : 'Flag'}
+                  </button>
+                  <div className="flex items-center gap-1.5 rounded-full border border-violet-100 bg-gradient-to-r from-violet-50 to-fuchsia-50 px-4 py-1.5 shadow-sm">
+                    <svg className="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-700">
+                      {question?.difficulty || 'medium'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -448,20 +472,25 @@ const QuizCard = () => {
                 {quiz.questions.map((_, idx) => {
                   const isAnswered = !!answers[idx + 1];
                   const isCurrent = currentQuestion === idx;
+                  const isFlagged = !!flaggedQuestions[idx + 1];
+                  
                   return (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setCurrentQuestion(idx)}
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${
+                      className={`relative flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${
                         isCurrent
                           ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-500/30'
                           : isAnswered
                           ? 'bg-cyan-50 text-cyan-700 border border-cyan-200'
                           : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
-                      }`}
+                      } ${isFlagged && !isCurrent ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
                     >
                       {idx + 1}
+                      {isFlagged && (
+                        <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white"></div>
+                      )}
                     </button>
                   );
                 })}
@@ -478,6 +507,12 @@ const QuizCard = () => {
                 <div className="flex items-center gap-2">
                    <div className="w-3 h-3 rounded-full bg-white border border-slate-200"></div>
                    <span>Not Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="relative w-3 h-3 rounded-full bg-white border border-slate-200 ring-2 ring-red-400 ring-offset-1">
+                     <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border border-white"></div>
+                   </div>
+                   <span>Flagged</span>
                 </div>
               </div>
             </div>
