@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import Footer from "../components/layout/Footer";
 
-const headerLinks = ["Home", "About", "Our Team", "Certifications", "LMS Features", "Contact"];
-
 const valueCards = [
   {
     title: "Smart Course Paths",
@@ -132,31 +130,7 @@ const HomePage = () => {
         <main className="px-4 pt-24 pb-16 md:px-8">
           <div className="mx-auto max-w-7xl">
             <section className="rounded-[30px] bg-white p-4 shadow-[0_26px_72px_-46px_rgba(15,23,42,0.48)] md:p-6">
-              <header className="rounded-2xl bg-gradient-to-r from-[#4f43d8] via-[#3f60e8] to-[#2f7be8] px-4 py-3 text-white md:px-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-sm font-bold">EF</span>
-                    <p className="text-lg font-semibold">EduFlow Academy</p>
-                  </div>
-
-                  <nav className="hidden items-center gap-5 text-xs font-medium text-blue-100 lg:flex">
-                    {headerLinks.map((item) => (
-                      <button key={item} type="button" className="transition hover:text-white">
-                        {item}
-                      </button>
-                    ))}
-                  </nav>
-
-                  <Link
-                    to="/register"
-                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black"
-                  >
-                    Start now
-                  </Link>
-                </div>
-              </header>
-
-              <div className="mt-4 overflow-hidden rounded-3xl bg-[#1f1b52] p-4 md:p-5">
+              <div className="overflow-hidden rounded-3xl bg-[#1f1b52] p-4 md:p-5">
                 <div className="rounded-2xl bg-gradient-to-r from-[#202356] via-[#282c6f] to-[#2f4590] p-5 text-white md:p-8">
                   <div className="grid items-center gap-6 lg:grid-cols-[1fr_360px]">
                     <div>

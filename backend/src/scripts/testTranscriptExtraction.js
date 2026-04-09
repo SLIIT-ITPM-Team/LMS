@@ -29,7 +29,7 @@ async function testTranscriptExtraction() {
 
       // Step 2: Generate summary
       console.log('Step 2: Generating summary...');
-      const summaryResult = processSummary(transcript, 500);
+      const summaryResult = await processSummary(transcript, 500);
       const summary = summaryResult.summary;
       
       console.log(`✓ Summary generated successfully!`);
