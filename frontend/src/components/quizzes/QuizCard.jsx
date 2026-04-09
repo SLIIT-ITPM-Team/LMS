@@ -297,8 +297,8 @@ const QuizCard = () => {
   const strokeOffset = circumference - ((result?.scorePercentage || 0) / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl md:p-8">
+    <div className="min-h-screen bg-slate-100 p-2 text-slate-900 md:p-4 lg:p-6">
+      <div className="mx-auto flex w-full max-w-none flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl md:min-h-[calc(100vh-2rem)] md:p-8 lg:p-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold md:text-3xl">{quiz?.title || 'Quiz Attempt'}</h1>
@@ -349,9 +349,9 @@ const QuizCard = () => {
         ) : null}
 
         {!loading && quiz?.questions?.length ? (
-          <div className="mt-6 grid gap-6 md:grid-cols-[1fr,240px]">
+          <div className="mt-6 grid flex-1 gap-6 md:grid-cols-[1fr,260px] lg:grid-cols-[1fr,320px] xl:grid-cols-[1fr,360px]">
             {/* Left Column: Active Question */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 md:p-8 shadow-sm">
               <div className="mb-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 rounded-full border border-cyan-100 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-1.5 shadow-sm">
                   <span className="relative flex h-2 w-2">
