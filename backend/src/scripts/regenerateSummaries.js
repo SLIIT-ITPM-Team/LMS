@@ -83,7 +83,7 @@ async function regenerateSummaries() {
 
         // Generate summary from transcript
         console.log(`  → Generating summary...`);
-        const summaryResult = processSummary(transcript, 500);
+        const summaryResult = await processSummary(transcript, 500);
         const summary = summaryResult.summary;
         
         console.log(`  ✓ Summary generated (${summary.length} chars, ${(summaryResult.validation.compressionRatio * 100).toFixed(1)}% compression)`);
