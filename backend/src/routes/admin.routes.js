@@ -10,7 +10,11 @@ const {
     getStatistics,
     getDepartments,
     createDepartment,
+    updateDepartment,
+    deleteDepartment,
     createModule,
+    updateModule,
+    deleteModule,
     getModules,
 } = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
@@ -42,7 +46,11 @@ router.post('/users/:id/assign-module', assignModule);
 router.get('/statistics', getStatistics);
 router.get('/departments', getDepartments);
 router.post('/departments', [body('name').notEmpty().withMessage('Department name is required')], createDepartment);
+router.put('/departments/:id', updateDepartment);
+router.delete('/departments/:id', deleteDepartment);
 router.get('/modules', getModules);
+router.put('/modules/:id', updateModule);
+router.delete('/modules/:id', deleteModule);
 router.post(
     '/modules',
     [
