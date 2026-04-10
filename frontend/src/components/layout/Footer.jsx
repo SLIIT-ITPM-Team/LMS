@@ -11,7 +11,7 @@ const socialLinks = [
 
 const Footer = () => {
 	return (
-		<footer className="border-t border-indigo-300/20 bg-gradient-to-r from-indigo-700 via-violet-700 to-purple-700 text-indigo-100">
+		<footer className="border-t border-white/10 bg-[#0B1F3B] text-gray-200">
 			<div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-4">
 				<div>
 					<div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ const Footer = () => {
 				</div>
 			</div>
 
-			<div className="border-t border-white/20 py-5 text-center text-sm text-indigo-100">
+			<div className="border-t border-white/10 py-5 text-center text-sm text-gray-300">
 				© 2024 EduFlow LMS. All rights reserved.
 			</div>
 		</footer>

@@ -12,7 +12,7 @@ const questionSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['fact', 'concept', 'inference', 'application', 'true_false'],
+      enum: ['fact', 'concept', 'inference', 'application', 'true_false', 'multiple_choice'],
       default: 'fact'
     },
     difficulty: {
@@ -22,7 +22,8 @@ const questionSchema = new mongoose.Schema(
     },
     questionText: { type: String, required: true },
     options: { type: [optionSchema], required: true },
-    correctAnswer: { type: String, required: true }
+    correctAnswer: { type: String, required: true },
+    explanation: { type: String, default: '' }
   },
   { _id: false }
 );
@@ -89,6 +90,24 @@ const quizSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true
+    },
+    sourceType: {
+      type: String,
+      enum: ['summary', 'pdf', 'ai_generated', 'ai_generated_pdf'],
+      default: 'summary'
+    },
+    sourceDocument: {
+      originalName: { type: String, default: '' },
+      storedName: { type: String, default: '' },
+      mimeType: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+      extractedTextLength: { type: Number, default: 0 }
+    },
+    metadata: {
+      generatedBy: { type: String, default: '' },
+      requestedDifficulty: { type: String, default: '' },
+      requestedType: { type: String, default: '' },
+      topic: { type: String, default: '' }
     },
     questions: {
       type: [questionSchema],

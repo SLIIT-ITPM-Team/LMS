@@ -5,12 +5,18 @@ import { courseApi } from '../../api/course.api';
 import { getDepartments, getModules } from '../../api/admin.api';
 import CourseForm from '../../components/courses/CourseForm';
 
+const YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4'];
+const SEMESTER_OPTIONS = ['1st Semester', '2nd Semester'];
+
 const ManageCourses = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
+  const [selectedAcademicSemester, setSelectedAcademicSemester] = useState('');
   const [selectedModule, setSelectedModule] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,21 +26,21 @@ const ManageCourses = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, [currentPage]);
+  }, [currentPage, selectedDepartment, selectedAcademicYear, selectedAcademicSemester, selectedModule]);
 
   useEffect(() => {
     fetchDependencies();
   }, []);
 
   useEffect(() => {
-    if (!selectedDepartment) {
+    if (!selectedDepartment && !selectedAcademicYear && !selectedAcademicSemester) {
       setModules([]);
       setSelectedModule('');
       return;
     }
 
-    fetchModulesByDepartment(selectedDepartment);
-  }, [selectedDepartment]);
+    fetchFilteredModules(selectedDepartment, selectedAcademicYear, selectedAcademicSemester);
+  }, [selectedDepartment, selectedAcademicYear, selectedAcademicSemester]);
 
   const fetchDependencies = async () => {
     try {
@@ -47,9 +53,14 @@ const ManageCourses = () => {
     }
   };
 
-  const fetchModulesByDepartment = async (departmentId) => {
+  const fetchFilteredModules = async (departmentId, academicYear, academicSemester) => {
     try {
-      const res = await getModules({ department: departmentId });
+      const params = {};
+      if (departmentId) params.department = departmentId;
+      if (academicYear) params.academicYear = academicYear;
+      if (academicSemester) params.academicSemester = academicSemester;
+
+      const res = await getModules(params);
       setModules(res.modules || []);
       setSelectedModule('');
     } catch (error) {
@@ -74,12 +85,17 @@ const ManageCourses = () => {
         page: currentPage,
         limit: 10,
         department: selectedDepartment || undefined,
+        academicYear: selectedAcademicYear || undefined,
+        academicSemester: selectedAcademicSemester || undefined,
         moduleId: selectedModule || undefined,
       });
-      setCourses(response.data);
+      setCourses(Array.isArray(response.data) ? response.data : []);
+      setPagination(response.pagination || null);
     } catch (error) {
       console.error('Fetch courses error:', error);
       toast.error('Failed to load courses');
+      setCourses([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
@@ -87,7 +103,6 @@ const ManageCourses = () => {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchCourses();
   };
 
   const handleDelete = async (courseId) => {
@@ -132,7 +147,7 @@ const ManageCourses = () => {
     setEditingCourse(null);
   };
 
-  const filteredCourses = courses.data?.filter(course => {
+  const filteredCourses = courses.filter(course => {
     const moduleName = getModuleName(course).toLowerCase();
     const departmentName = getDepartmentName(course).toLowerCase();
     const matchesSearch =
@@ -145,9 +160,11 @@ const ManageCourses = () => {
       String(course?.moduleId?.department?._id || course?.moduleId?.department) === String(selectedDepartment);
 
     const matchesModule = !selectedModule || String(course?.moduleId?._id) === String(selectedModule);
+    const matchesYear = !selectedAcademicYear || String(course?.moduleId?.academicYear) === String(selectedAcademicYear);
+    const matchesSemester = !selectedAcademicSemester || String(course?.moduleId?.academicSemester) === String(selectedAcademicSemester);
 
-    return matchesSearch && matchesDepartment && matchesModule;
-  }) || [];
+    return matchesSearch && matchesDepartment && matchesYear && matchesSemester && matchesModule;
+  });
 
   if (loading) {
     return (
@@ -161,37 +178,25 @@ const ManageCourses = () => {
   }
 
   return (
-    <div className="bg-transparent">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
-              <p className="text-gray-600 mt-1">Manage all courses and their content</p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Add New Course
-              </button>
-              <button
-                onClick={() => navigate('/admin')}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Back to Admin
-              </button>
-            </div>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Course Management</h1>
+          <p className="text-gray-600 mt-1 text-sm">Manage all courses and their content</p>
         </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700"
+        >
+          Add New Course
+        </button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search Courses
@@ -239,6 +244,38 @@ const ManageCourses = () => {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Year
+              </label>
+              <select
+                value={selectedAcademicYear}
+                onChange={(e) => setSelectedAcademicYear(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">All Years</option>
+                {YEAR_OPTIONS.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Semester
+              </label>
+              <select
+                value={selectedAcademicSemester}
+                onChange={(e) => setSelectedAcademicSemester(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">All Semesters</option>
+                {SEMESTER_OPTIONS.map((semester) => (
+                  <option key={semester} value={semester}>{semester}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex items-end">
               <button
                 onClick={handleSearch}
@@ -260,7 +297,7 @@ const ManageCourses = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No courses found</h3>
             <p className="text-gray-600">
-              {courses.data?.length === 0 
+              {courses.length === 0 
                 ? "No courses have been created yet. Create your first course to get started." 
                 : "No courses match your current filters. Try adjusting your search criteria."}
             </p>
@@ -278,22 +315,22 @@ const ManageCourses = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Course Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Module
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Department
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -301,27 +338,28 @@ const ManageCourses = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCourses.map((course) => (
                       <tr key={course._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-4 py-3 max-w-[200px]">
+                          <div className="text-sm font-medium text-gray-900 break-words">
                             {course.title}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {getModuleName(course)}
+                            <div className="text-xs text-gray-400">{course?.moduleId?.academicYear || '-'} | {course?.moduleId?.academicSemester || '-'}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {getDepartmentName(course)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {new Date(course.createdAt).toLocaleDateString()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="flex space-x-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               course.summaryText ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -335,32 +373,34 @@ const ManageCourses = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => navigate(`/courses/${course._id}`)}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleEdit(course)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleRegenerateSummary(course._id)}
-                            className="text-purple-600 hover:text-purple-900"
-                            disabled={!course.transcriptText}
-                          >
-                            Regenerate
-                          </button>
-                          <button
-                            onClick={() => handleDelete(course._id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => navigate(`/courses/${course._id}`)}
+                              className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleEdit(course)}
+                              className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleRegenerateSummary(course._id)}
+                              disabled={!course.transcriptText}
+                              className="rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              Regenerate
+                            </button>
+                            <button
+                              onClick={() => handleDelete(course._id)}
+                              className="rounded-lg bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -370,10 +410,10 @@ const ManageCourses = () => {
             </div>
 
             {/* Pagination */}
-            {courses.pagination && (
+            {pagination && (
               <div className="mt-6 flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, courses.pagination.totalCourses)} of {courses.pagination.totalCourses} results
+                  Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, pagination.totalCourses)} of {pagination.totalCourses} results
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -385,7 +425,7 @@ const ManageCourses = () => {
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => prev + 1)}
-                    disabled={!courses.pagination.hasNextPage}
+                    disabled={!pagination.hasNextPage}
                     className="px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next

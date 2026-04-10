@@ -51,6 +51,16 @@ export const createDepartment = async (data) => {
   return response.data;
 };
 
+export const updateDepartment = async (id, data) => {
+  const response = await api.put(`/api/admin/departments/${id}`, data);
+  return response.data;
+};
+
+export const deleteDepartment = async (id) => {
+  const response = await api.delete(`/api/admin/departments/${id}`);
+  return response.data;
+};
+
 export const getModules = async (params = {}) => {
   const response = await api.get('/api/admin/modules', { params });
   return response.data;
@@ -58,5 +68,15 @@ export const getModules = async (params = {}) => {
 
 export const createModule = async (data) => {
   const response = await api.post('/api/admin/modules', data);
+  return response.data;
+};
+
+export const updateModule = async (id, data) => {
+  const response = await api.put(`/api/admin/modules/${id}`, data);
+  return response.data;
+};
+
+export const deleteModule = async (id) => {
+  const response = await api.delete(`/api/admin/modules/${id}`);
   return response.data;
 };

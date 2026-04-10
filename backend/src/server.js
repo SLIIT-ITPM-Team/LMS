@@ -23,7 +23,7 @@ const healthRouter = require('./routes/health.routes');
 
 // Ensure uploads directories exist
 const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
@@ -40,7 +40,7 @@ const authLimiter = rateLimit({
 });
 
 // Serve uploaded PDFs statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // MongoDB connection
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL;
@@ -120,6 +120,7 @@ const channelRoutes = require('./routes/channel.routes.js');
 const authRouter = require('./routes/auth.routes');
 const adminRouter = require('./routes/admin.routes');
 const courseRouter = require('./routes/course.routes.js');
+const materialRouter = require('./routes/material.routes.js');
 
 // Health check endpoint first
 app.use('/api/health', healthRouter);
@@ -130,6 +131,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/quiz', quizRouter);
 app.use('/api/courses', courseRouter);
+app.use('/api/materials', materialRouter);
 
 // Global io instance
 let io;

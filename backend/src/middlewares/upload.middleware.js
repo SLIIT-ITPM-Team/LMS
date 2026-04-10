@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import multer from 'multer';
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 
 const uploadDir = path.join(process.cwd(), 'uploads');
 
@@ -19,6 +19,7 @@ const storage = multer.diskStorage({
 
 const allowedMimeTypes = [
   'application/pdf',
+  'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
@@ -31,8 +32,8 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter,
 });
 
-export default upload;
+module.exports = upload;
