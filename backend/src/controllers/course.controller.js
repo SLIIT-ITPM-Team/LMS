@@ -86,7 +86,7 @@ const createCourse = asyncHandler(async (req, res) => {
 
     if (transcriptText) {
       try {
-        const summaryResult = processSummary(transcriptText, 500);
+        const summaryResult = await processSummary(transcriptText, 500);
         summaryText = summaryResult.summary;
       } catch (summaryError) {
         warnings.push('Summary generation failed. The course was created without summary.');
@@ -305,7 +305,7 @@ const updateCourse = asyncHandler(async (req, res) => {
     // Regenerate summary if requested or if transcript changed
     if (shouldRegenerateSummary && course.transcriptText) {
       try {
-        const summaryResult = processSummary(course.transcriptText, 500);
+        const summaryResult = await processSummary(course.transcriptText, 500);
         course.summaryText = summaryResult.summary;
       } catch (error) {
         console.error('Summary generation failed:', error);
@@ -448,7 +448,7 @@ const regenerateSummary = asyncHandler(async (req, res) => {
     }
 
     // Generate new summary
-    const summaryResult = processSummary(course.transcriptText, 500);
+    const summaryResult = await processSummary(course.transcriptText, 500);
     course.summaryText = summaryResult.summary;
 
     // Generate new PDF

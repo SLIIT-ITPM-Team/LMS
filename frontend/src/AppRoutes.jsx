@@ -62,14 +62,6 @@ const AppRoutes = () => (
       }
     />
     <Route
-      path="/admin/courses"
-      element={
-        <ProtectedRoute roles={["admin"]}>
-          <ManageCourses />
-        </ProtectedRoute>
-      }
-    />
-    <Route
         path="/quizzes"
         element={
           <ProtectedRoute roles={["student", "admin"]}>

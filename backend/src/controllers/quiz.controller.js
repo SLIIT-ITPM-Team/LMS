@@ -13,7 +13,7 @@ const {
 	createQuizTitle,
 	sanitizeQuestionsForClient,
 	evaluateQuizAnswers,
-	createCertificateId
+	createCertificateId,
 } = require('../services/quizgen.service');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
