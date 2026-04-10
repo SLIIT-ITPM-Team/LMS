@@ -189,6 +189,7 @@ const QuizCard = () => {
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [flaggedQuestions, setFlaggedQuestions] = useState({});
   const [result, setResult] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
 
@@ -229,6 +230,13 @@ const QuizCard = () => {
     setAnswers((previous) => ({
       ...previous,
       [currentQuestion + 1]: selectedText
+    }));
+  };
+
+  const handleToggleFlag = () => {
+    setFlaggedQuestions((prev) => ({
+      ...prev,
+      [currentQuestion + 1]: !prev[currentQuestion + 1]
     }));
   };
 
@@ -297,8 +305,8 @@ const QuizCard = () => {
   const strokeOffset = circumference - ((result?.scorePercentage || 0) / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-8 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-5 shadow-xl md:p-8">
+    <div className="min-h-screen bg-slate-100 p-2 text-slate-900 md:p-4 lg:p-6">
+      <div className="mx-auto flex w-full max-w-none flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl md:min-h-[calc(100vh-2rem)] md:p-8 lg:p-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold md:text-3xl">{quiz?.title || 'Quiz Attempt'}</h1>
@@ -349,80 +357,164 @@ const QuizCard = () => {
         ) : null}
 
         {!loading && quiz?.questions?.length ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-200">
-                Question {currentQuestion + 1} / {quiz.questions.length}
-              </span>
-              <span className="rounded-full bg-violet-500/20 px-3 py-1 text-xs font-semibold text-violet-200">
-                {question?.difficulty || 'medium'}
-              </span>
+          <div className="mt-6 grid flex-1 gap-6 md:grid-cols-[1fr,260px] lg:grid-cols-[1fr,320px] xl:grid-cols-[1fr,360px]">
+            {/* Left Column: Active Question */}
+            <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 md:p-8 shadow-sm">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 rounded-full border border-cyan-100 bg-gradient-to-r from-cyan-50 to-blue-50 px-4 py-1.5 shadow-sm">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500"></span>
+                  </span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-700">
+                    Question <span className="text-cyan-900">{currentQuestion + 1}</span> / {quiz.questions.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleFlag}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition shadow-sm ${
+                      flaggedQuestions[currentQuestion + 1]
+                        ? 'border-red-200 bg-red-50 text-red-600'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <svg className="h-3.5 w-3.5" fill={flaggedQuestions[currentQuestion + 1] ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                    </svg>
+                    {flaggedQuestions[currentQuestion + 1] ? 'Flagged' : 'Flag'}
+                  </button>
+                  <div className="flex items-center gap-1.5 rounded-full border border-violet-100 bg-gradient-to-r from-violet-50 to-fuchsia-50 px-4 py-1.5 shadow-sm">
+                    <svg className="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-700">
+                      {question?.difficulty || 'medium'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentQuestion}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.24 }}
+                >
+                  <h2 className="text-lg font-semibold leading-relaxed text-slate-900 md:text-xl">
+                    {question?.questionText}
+                  </h2>
+
+                  <div className="mt-4 grid gap-3">
+                    {question?.options?.map((option, index) => {
+                      const optionText = getOptionText(option);
+                      const selected = answers[currentQuestion + 1] === optionText;
+                      return (
+                        <motion.button
+                          key={`${index}-${optionText}`}
+                          whileTap={{ scale: 0.99 }}
+                          type="button"
+                          onClick={() => handleSelectAnswer(option)}
+                          className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition md:text-base ${
+                            selected
+                              ? 'border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md'
+                              : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                          }`}
+                        >
+                          {optionText}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="mt-6 flex flex-wrap justify-between gap-2 border-t border-slate-100 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setCurrentQuestion((prev) => Math.max(prev - 1, 0))}
+                  disabled={currentQuestion === 0}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+                {currentQuestion < quiz.questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentQuestion((prev) => Math.min(prev + 1, quiz.questions.length - 1))}
+                    className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {submitting ? 'Evaluating...' : 'Submit Quiz'}
+                  </button>
+                )}
+              </div>
             </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentQuestion}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.24 }}
-              >
-                <h2 className="text-lg font-semibold leading-relaxed text-slate-900 md:text-xl">
-                  {question?.questionText}
-                </h2>
-
-                <div className="mt-4 grid gap-3">
-                  {question?.options?.map((option, index) => {
-                    const optionText = getOptionText(option);
-                    const selected = answers[currentQuestion + 1] === optionText;
-                    return (
-                      <motion.button
-                        key={`${index}-${optionText}`}
-                        whileTap={{ scale: 0.99 }}
-                        type="button"
-                        onClick={() => handleSelectAnswer(option)}
-                        className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition md:text-base ${
-                          selected
-                            ? 'border-cyan-400 bg-cyan-50 text-cyan-900 shadow-md'
-                            : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
-                        }`}
-                      >
-                        {optionText}
-                      </motion.button>
-                    );
-                  })}
+            {/* Right Column: Question Navigator */}
+            <div className="hidden rounded-2xl border border-slate-200 bg-slate-50 p-5 md:block shadow-sm">
+              <h3 className="mb-4 text-sm font-bold tracking-wider text-slate-700 uppercase">
+                Questions Navigator
+              </h3>
+              <div className="grid grid-cols-4 gap-2">
+                {quiz.questions.map((_, idx) => {
+                  const isAnswered = !!answers[idx + 1];
+                  const isCurrent = currentQuestion === idx;
+                  const isFlagged = !!flaggedQuestions[idx + 1];
+                  
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCurrentQuestion(idx)}
+                      className={`relative flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all ${
+                        isCurrent
+                          ? 'bg-cyan-500 text-white shadow-md ring-2 ring-cyan-500/30'
+                          : isAnswered
+                          ? 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+                          : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
+                      } ${isFlagged && !isCurrent ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+                    >
+                      {idx + 1}
+                      {isFlagged && (
+                        <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white"></div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-6 flex flex-col gap-2 text-xs font-semibold text-slate-600 border-t border-slate-200/50 pt-4">
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                   <span>Current</span>
                 </div>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="mt-6 flex flex-wrap justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentQuestion((prev) => Math.max(prev - 1, 0))}
-                disabled={currentQuestion === 0}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Previous
-              </button>
-
-              {currentQuestion < quiz.questions.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => setCurrentQuestion((prev) => Math.min(prev + 1, quiz.questions.length - 1))}
-                  className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {submitting ? 'Evaluating...' : 'Submit Quiz'}
-                </button>
-              )}
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-cyan-50 border border-cyan-200"></div>
+                   <span>Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="w-3 h-3 rounded-full bg-white border border-slate-200"></div>
+                   <span>Not Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="relative w-3 h-3 rounded-full bg-white border border-slate-200 ring-2 ring-red-400 ring-offset-1">
+                     <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border border-white"></div>
+                   </div>
+                   <span>Flagged</span>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
