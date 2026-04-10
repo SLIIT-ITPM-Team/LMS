@@ -6,9 +6,27 @@ const mongoose = require('mongoose');
 const Quiz = require('../models/Quiz');
 const { summarizeText } = require('../utils/summarize');
 const openAIService = require('../services/openai.service');
-const quizGenService = require('../services/quizgen.service');
+const {
+	normalizeSummary,
+	extractKeywords,
+	createContextualQuestions,
+	createQuizTitle,
+	sanitizeQuestionsForClient,
+	evaluateQuizAnswers,
+	createCertificateId,
+} = require('../services/quizgen.service');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
+
+function normalizeSummaryText(value) {
+	if (typeof normalizeSummary === 'function') {
+		return normalizeSummary(value);
+	}
+
+	return String(value || '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
 
 function ensureDatabaseConnected(res) {
 	if (mongoose.connection.readyState !== 1) {
@@ -28,7 +46,7 @@ const createQuizFromPdf = async (req, res) => {
 
 		const dataBuffer = fs.readFileSync(req.file.path);
 		const parsedPdf = await pdfParse(dataBuffer);
-		const rawText = normalizeSummary(parsedPdf.text);
+		const rawText = normalizeSummaryText(parsedPdf.text);
 
 		if (!rawText) {
 			return res.status(400).json({ success: false, message: 'Unable to extract text from the uploaded PDF.' });
@@ -83,7 +101,7 @@ const createQuizFromSummary = async (req, res) => {
 	try {
 		if (!ensureDatabaseConnected(res)) return;
 
-		const summary = normalizeSummary(req.body.summary);
+		const summary = normalizeSummaryText(req.body.summary);
 		if (!summary) {
 			return res.status(400).json({ success: false, message: 'Summary is required.' });
 		}
@@ -161,7 +179,7 @@ const updateQuiz = async (req, res) => {
 		}
 
 		const nextTitle = String(req.body.title || '').trim();
-		const nextSummary = normalizeSummary(req.body.summary);
+		const nextSummary = normalizeSummaryText(req.body.summary);
 
 		if (!nextTitle) {
 			return res.status(400).json({ success: false, message: 'Title is required.' });
@@ -256,25 +274,12 @@ const attemptQuiz = async (req, res) => {
 		const perUserPreviousAttempts = quiz.attempts.filter((attempt) => attempt.userEmail === userEmail).length;
 		const attemptNumber = perUserPreviousAttempts + 1;
 
-		const evaluatedAnswers = quiz.questions.map((question, index) => {
-			const payload = Array.isArray(answers)
-				? answers[index]
-				: answers[index + 1] ?? answers[String(index + 1)] ?? answers[index] ?? answers[String(index)];
-			const selectedAnswer = resolveSelectedAnswer(question, payload);
-			const isCorrect = selectedAnswer.toLowerCase() === String(question.correctAnswer || '').toLowerCase();
-
-			return {
-				questionNumber: index + 1,
-				questionText: question.questionText,
-				selectedAnswer,
-				correctAnswer: question.correctAnswer,
-				isCorrect
-			};
-		});
-
-		const correctCount = evaluatedAnswers.filter((item) => item.isCorrect).length;
-		const scorePercentage = Math.round((correctCount / quiz.questions.length) * 100);
-		const passed = scorePercentage >= 60;
+		const {
+			evaluatedAnswers,
+			correctCount,
+			scorePercentage,
+			passed
+		} = evaluateQuizAnswers(quiz.questions, answers, userEmail);
 		const certificateId = passed ? createCertificateId(userEmail, quiz._id, attemptNumber) : null;
 
 		quiz.attempts.push({
@@ -324,7 +329,6 @@ const getPerQuizUserStats = async (req, res) => {
 
 		const userEmail = String(req.params.userEmail || '').trim().toLowerCase();
 		const quiz = await Quiz.findById(req.params.id).select('title attempts');
-
 		if (!quiz) {
 			return res.status(404).json({ success: false, message: 'Quiz not found.' });
 		}
@@ -470,7 +474,7 @@ const createCreativeQuiz = async (req, res) => {
 		// Use OpenAI to generate creative questions
 		const questions = await openAIService.generateCreativeQuiz({
 			topic: topic.trim(),
-			content: content ? normalizeSummary(content) : '',
+			content: content ? normalizeSummaryText(content) : '',
 			questionCount: count,
 			difficulty: difficulty.toLowerCase(),
 			questionType: questionType.toLowerCase()
@@ -482,7 +486,7 @@ const createCreativeQuiz = async (req, res) => {
 		// Create the quiz in the database
 		const quiz = await Quiz.create({
 			title,
-			summary: content ? normalizeSummary(content) : `Creative quiz about ${topic.trim()}`,
+			summary: content ? normalizeSummaryText(content) : `Creative quiz about ${topic.trim()}`,
 			sourceType: 'ai_generated',
 			questions,
 			metadata: {
@@ -553,7 +557,7 @@ const createCreativeQuizFromPdf = async (req, res) => {
 		// Extract text from PDF
 		const dataBuffer = fs.readFileSync(req.file.path);
 		const parsedPdf = await pdfParse(dataBuffer);
-		const rawText = normalizeSummary(parsedPdf.text);
+		const rawText = normalizeSummaryText(parsedPdf.text);
 
 		if (!rawText) {
 			return res.status(400).json({

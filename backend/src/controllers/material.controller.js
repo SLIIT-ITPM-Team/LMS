@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const Material = require('../models/Material');
 const Module = require('../models/Module');
@@ -73,9 +74,9 @@ const uploadMaterial = async (req, res) => {
 
     const fileUrl =
       file.secure_url ||
-      file.path ||
       file.location ||
-      (file.filename ? `/uploads/${file.filename}` : '');
+      (file.filename ? `/uploads/${file.filename}` : '') ||
+      file.path;
 
     const createdByAdmin = isAdmin(req);
 
@@ -369,20 +370,28 @@ const downloadMaterial = async (req, res) => {
     const contentType = contentTypeByFileType[material.fileType] || 'application/octet-stream';
     const dispositionType = mode === 'view' ? 'inline' : 'attachment';
 
-    res.setHeader('Content-Type', contentType);
-    res.setHeader(
-      'Content-Disposition',
-      `${dispositionType}; filename="${asciiFileName}"; filename*=UTF-8''${encodedName}`
-    );
-
     if (!isHttp && fileUrl) {
-      const absolutePath = path.isAbsolute(fileUrl)
+      // On Windows, path.isAbsolute('/uploads/foo') returns true (drive-relative)
+      // but lacks a drive letter, so always rebuild from cwd for non-Windows-absolute paths.
+      const isWindowsAbsolute = /^[A-Za-z]:[/\\]/.test(fileUrl);
+      const absolutePath = isWindowsAbsolute
         ? fileUrl
         : path.join(process.cwd(), fileUrl.replace(/^\/+/, ''));
+
+      if (!fs.existsSync(absolutePath)) {
+        console.error('downloadMaterial: file not found on disk:', absolutePath);
+        return res.status(404).json({ success: false, message: 'File not found on server.' });
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader(
+        'Content-Disposition',
+        `${dispositionType}; filename="${asciiFileName}"; filename*=UTF-8''${encodedName}`
+      );
       return res.sendFile(absolutePath, (err) => {
-        if (err) {
+        if (err && !res.headersSent) {
           console.error('downloadMaterial sendFile error:', err);
-          res.status(500).json({ success: false, message: 'Failed to download file.' });
+          res.status(500).json({ success: false, message: 'Failed to stream file.' });
         }
       });
     }
@@ -394,6 +403,11 @@ const downloadMaterial = async (req, res) => {
       }
 
       const arrayBuffer = await upstreamResponse.arrayBuffer();
+      res.setHeader('Content-Type', contentType);
+      res.setHeader(
+        'Content-Disposition',
+        `${dispositionType}; filename="${asciiFileName}"; filename*=UTF-8''${encodedName}`
+      );
       return res.status(200).send(Buffer.from(arrayBuffer));
     }
 
@@ -420,7 +434,7 @@ const generateMaterialSummary = async (req, res) => {
       });
     }
 
-    material.summaryText = processSummary(material.extractedText, 500).summary;
+    material.summaryText = (await processSummary(material.extractedText, 500)).summary;
     await material.save();
 
     return res.status(200).json({

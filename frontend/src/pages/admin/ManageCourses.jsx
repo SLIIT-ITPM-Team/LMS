@@ -178,34 +178,22 @@ const ManageCourses = () => {
   }
 
   return (
-    <div className="bg-transparent">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
-              <p className="text-gray-600 mt-1">Manage all courses and their content</p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                Add New Course
-              </button>
-              <button
-                onClick={() => navigate('/admin')}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Back to Admin
-              </button>
-            </div>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Course Management</h1>
+          <p className="text-gray-600 mt-1 text-sm">Manage all courses and their content</p>
         </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700"
+        >
+          Add New Course
+        </button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full">
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
@@ -327,22 +315,22 @@ const ManageCourses = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Course Title
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Module
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Department
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -350,28 +338,28 @@ const ManageCourses = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCourses.map((course) => (
                       <tr key={course._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-4 py-3 max-w-[200px]">
+                          <div className="text-sm font-medium text-gray-900 break-words">
                             {course.title}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {getModuleName(course)}
                             <div className="text-xs text-gray-400">{course?.moduleId?.academicYear || '-'} | {course?.moduleId?.academicSemester || '-'}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {getDepartmentName(course)}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm text-gray-500">
                             {new Date(course.createdAt).toLocaleDateString()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="flex space-x-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               course.summaryText ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -385,32 +373,34 @@ const ManageCourses = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => navigate(`/courses/${course._id}`)}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleEdit(course)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleRegenerateSummary(course._id)}
-                            className="text-purple-600 hover:text-purple-900"
-                            disabled={!course.transcriptText}
-                          >
-                            Regenerate
-                          </button>
-                          <button
-                            onClick={() => handleDelete(course._id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => navigate(`/courses/${course._id}`)}
+                              className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleEdit(course)}
+                              className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleRegenerateSummary(course._id)}
+                              disabled={!course.transcriptText}
+                              className="rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              Regenerate
+                            </button>
+                            <button
+                              onClick={() => handleDelete(course._id)}
+                              className="rounded-lg bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

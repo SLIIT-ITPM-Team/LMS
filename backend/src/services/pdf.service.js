@@ -2,220 +2,209 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-/**
- * Generate PDF from course summary
- * @param {Object} courseData - Course data including summary
- * @returns {Promise<string>} - Path to generated PDF file
- */
-async function generateCoursePDF(courseData) {
-  return new Promise((resolve, reject) => {
-    try {
-      // Ensure uploads directory exists
-      const uploadsDir = path.join(__dirname, '../../uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
+// uploads lives at backend/uploads/ (two levels up from backend/src/services/)
+const UPLOADS_DIR = path.join(__dirname, '../../uploads');
 
-      // Generate filename
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `course-summary-${courseData.title.replace(/\s+/g, '-').toLowerCase()}-${timestamp}.pdf`;
-      const filePath = path.join(uploadsDir, filename);
+// ---------------------------------------------------------------------------
+// Markdown parser — handles the structured output produced by the LLM
+// Supported tokens:
+//   **text**         → bold heading-style line
+//   * text           → bullet point
+//   plain text       → normal paragraph
+// ---------------------------------------------------------------------------
+function parseMarkdown(text) {
+  const tokens = [];
+  const lines = text.split('\n');
 
-      // Create PDF document
-      const doc = new PDFDocument({
-        size: 'A4',
-        margin: 50
-      });
-
-      // Pipe to file
-      const writeStream = fs.createWriteStream(filePath);
-      doc.pipe(writeStream);
-
-      // Add header with LMS branding
-      addHeader(doc, courseData.title);
-      
-      // Add course information
-      addCourseInfo(doc, courseData);
-      
-      // Add summary content
-      addSummaryContent(doc, courseData.summaryText);
-      
-      // Add footer
-      addFooter(doc);
-
-      // Finalize PDF
-      doc.end();
-
-      writeStream.on('finish', () => {
-        resolve(`/uploads/${filename}`);
-      });
-
-      writeStream.on('error', (error) => {
-        reject(new Error(`Failed to create PDF: ${error.message}`));
-      });
-
-    } catch (error) {
-      reject(new Error(`PDF generation failed: ${error.message}`));
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      tokens.push({ type: 'spacer' });
+      continue;
     }
-  });
+    // Bold heading: **text** alone on a line
+    if (/^\*\*(.+)\*\*$/.test(line)) {
+      tokens.push({ type: 'heading', text: line.replace(/\*\*/g, '') });
+    }
+    // Bullet: * text  or - text
+    else if (/^[*-]\s+(.+)/.test(line)) {
+      tokens.push({ type: 'bullet', text: line.replace(/^[*-]\s+/, '') });
+    }
+    // Inline bold: strip ** markers, keep text
+    else {
+      tokens.push({ type: 'paragraph', text: line.replace(/\*\*/g, '') });
+    }
+  }
+  return tokens;
 }
 
-/**
- * Add header with LMS branding
- * @param {PDFDocument} doc - PDF document instance
- * @param {string} title - Course title
- */
+// ---------------------------------------------------------------------------
+// PDF builder helpers
+// ---------------------------------------------------------------------------
+
 function addHeader(doc, title) {
-  // LMS Logo/Title (simplified)
   doc.font('Helvetica-Bold')
-     .fontSize(24)
-     .fillColor('#6366F1')
+     .fontSize(22)
+     .fillColor('#4F46E5')
      .text('EduFlow LMS', 50, 50);
 
   doc.font('Helvetica')
      .fontSize(10)
-     .fillColor('#666666')
-     .text('Course Summary Document', 50, 80);
+     .fillColor('#6B7280')
+     .text('AI-Generated Course Summary', 50, 78);
 
-  // Course title
-  doc.moveDown(2)
+  doc.moveDown(1.5)
      .font('Helvetica-Bold')
-     .fontSize(18)
-     .fillColor('#333333')
-     .text(title, {
-       align: 'center'
-     });
+     .fontSize(16)
+     .fillColor('#111827')
+     .text(title, { align: 'center' });
 
-  // Separator line
-  doc.moveDown(1)
-     .strokeColor('#E5E7EB')
-     .lineWidth(1)
-     .moveTo(50, doc.y + 10)
-     .lineTo(550, doc.y + 10)
-     .stroke();
+  // Divider
+  const y = doc.y + 10;
+  doc.strokeColor('#E5E7EB').lineWidth(1).moveTo(50, y).lineTo(545, y).stroke();
+  doc.moveDown(1.5);
 }
 
-/**
- * Add course information section
- * @param {PDFDocument} doc - PDF document instance
- * @param {Object} courseData - Course data
- */
 function addCourseInfo(doc, courseData) {
-  doc.moveDown(2)
-     .font('Helvetica-Bold')
-     .fontSize(12)
-     .fillColor('#374151')
-     .text('Course Information', {
-       underline: true
-     });
+  doc.font('Helvetica')
+     .fontSize(10)
+     .fillColor('#6B7280');
 
-  doc.moveDown(1)
-     .font('Helvetica')
-     .fontSize(11)
-     .fillColor('#4B5563');
-
-  const infoLines = [
-    `Module: ${courseData.moduleName || 'N/A'}`,
-    `Department: ${courseData.department || 'N/A'}`,
-    `Generated: ${new Date().toLocaleDateString()}`,
-    `Video URL: ${courseData.videoUrl || 'N/A'}`
+  const fields = [
+    ['Module', courseData.moduleName || 'N/A'],
+    ['Video', courseData.videoUrl || 'N/A'],
+    ['Generated', new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })],
   ];
 
-  infoLines.forEach(line => {
-    doc.text(line, 50, doc.y, {
-      continued: false
-    });
+  fields.forEach(([label, value]) => {
+    doc.font('Helvetica-Bold').text(`${label}: `, { continued: true })
+       .font('Helvetica').text(value);
   });
+
+  doc.moveDown(1);
+  const y = doc.y;
+  doc.strokeColor('#E5E7EB').lineWidth(0.5).moveTo(50, y).lineTo(545, y).stroke();
+  doc.moveDown(1.5);
 }
 
-/**
- * Add summary content section
- * @param {PDFDocument} doc - PDF document instance
- * @param {string} summaryText - Summary text content
- */
 function addSummaryContent(doc, summaryText) {
-  doc.moveDown(2)
-     .font('Helvetica-Bold')
-     .fontSize(12)
-     .fillColor('#374151')
-     .text('Summary Content', {
-       underline: true
-     });
+  const tokens = parseMarkdown(summaryText);
 
-  doc.moveDown(1)
-     .font('Helvetica')
-     .fontSize(11)
-     .fillColor('#333333')
-     .text(summaryText, {
-       align: 'justify',
-       lineGap: 5,
-       indent: 10
-     });
+  for (const token of tokens) {
+    switch (token.type) {
+      case 'heading':
+        doc.moveDown(0.5)
+           .font('Helvetica-Bold')
+           .fontSize(13)
+           .fillColor('#1E40AF')
+           .text(token.text);
+        doc.moveDown(0.3);
+        break;
+
+      case 'bullet':
+        doc.font('Helvetica')
+           .fontSize(11)
+           .fillColor('#374151')
+           .text(`•  ${token.text}`, {
+             indent: 12,
+             lineGap: 3,
+           });
+        break;
+
+      case 'paragraph':
+        doc.font('Helvetica')
+           .fontSize(11)
+           .fillColor('#374151')
+           .text(token.text, {
+             align: 'justify',
+             lineGap: 4,
+           });
+        doc.moveDown(0.4);
+        break;
+
+      case 'spacer':
+        doc.moveDown(0.3);
+        break;
+    }
+  }
 }
 
-/**
- * Add footer with page numbers and branding
- * @param {PDFDocument} doc - PDF document instance
- */
-function addFooter(doc) {
-  // Add page number and footer
-  const addFooterToPage = () => {
-    doc.font('Helvetica-Oblique')
+function addFooters(doc) {
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    doc.font('Helvetica')
        .fontSize(9)
        .fillColor('#9CA3AF')
        .text(
-         `Page ${doc.bufferedPageRange().start + 1} • Generated by EduFlow LMS`,
+         `Page ${i + 1} of ${range.count}  •  Generated by EduFlow LMS`,
          50,
-         doc.page.height - 50,
-         { align: 'center' }
+         doc.page.height - 45,
+         { align: 'center', width: doc.page.width - 100 }
        );
-  };
-
-  // Add footer to current page
-  addFooterToPage();
-
-  // Add footer to future pages
-  doc.on('pageAdded', addFooterToPage);
+  }
 }
 
-/**
- * Delete PDF file
- * @param {string} filePath - Path to PDF file
- * @returns {Promise<boolean>} - Success status
- */
-async function deletePDF(filePath) {
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+async function generateCoursePDF(courseData) {
   return new Promise((resolve, reject) => {
     try {
-      const fullPath = path.join(__dirname, '../../', filePath);
-      
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-    } catch (error) {
-      reject(new Error(`Failed to delete PDF: ${error.message}`));
+      if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+      const safeName = (courseData.title || 'course')
+        .replace(/[^a-zA-Z0-9]/g, '-')
+        .toLowerCase()
+        .slice(0, 60);
+      const timestamp = Date.now();
+      const filename = `course-summary-${safeName}-${timestamp}.pdf`;
+      const filePath = path.join(UPLOADS_DIR, filename);
+
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 60, left: 50, right: 50 },
+        bufferPages: true,   // required for addFooters()
+      });
+
+      const writeStream = fs.createWriteStream(filePath);
+      doc.pipe(writeStream);
+
+      addHeader(doc, courseData.title || 'Course Summary');
+      addCourseInfo(doc, courseData);
+      addSummaryContent(doc, courseData.summaryText || '');
+
+      // Add page numbers to all pages before flushing
+      addFooters(doc);
+
+      doc.end();
+
+      writeStream.on('finish', () => resolve(`/uploads/${filename}`));
+      writeStream.on('error', (err) => reject(new Error(`Write stream error: ${err.message}`)));
+
+    } catch (err) {
+      reject(new Error(`PDF generation failed: ${err.message}`));
     }
   });
 }
 
-/**
- * Check if PDF exists
- * @param {string} filePath - Path to PDF file
- * @returns {boolean} - File existence status
- */
-function pdfExists(filePath) {
+async function deletePDF(filePath) {
   try {
-    const fullPath = path.join(__dirname, '../../', filePath);
-    return fs.existsSync(fullPath);
-  } catch (error) {
+    const full = path.join(__dirname, '../../', filePath);
+    if (fs.existsSync(full)) fs.unlinkSync(full);
+    return true;
+  } catch {
     return false;
   }
 }
 
-module.exports = {
-  generateCoursePDF,
-  deletePDF,
-  pdfExists
-};
+function pdfExists(filePath) {
+  try {
+    return fs.existsSync(path.join(__dirname, '../../', filePath));
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { generateCoursePDF, deletePDF, pdfExists };
