@@ -23,7 +23,7 @@ const healthRouter = require('./routes/health.routes');
 
 // Ensure uploads directories exist
 const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
@@ -40,7 +40,7 @@ const authLimiter = rateLimit({
 });
 
 // Serve uploaded PDFs statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // MongoDB connection
 const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URL;

@@ -420,7 +420,7 @@ const generateMaterialSummary = async (req, res) => {
       });
     }
 
-    material.summaryText = processSummary(material.extractedText, 500).summary;
+    material.summaryText = (await processSummary(material.extractedText, 500)).summary;
     await material.save();
 
     return res.status(200).json({

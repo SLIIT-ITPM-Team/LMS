@@ -276,6 +276,37 @@ const getDepartments = asyncHandler(async (req, res) => {
     res.json({ departments });
 });
 
+// @desc    Update department
+// @route   PUT /api/admin/departments/:id
+// @access  Private/Admin
+const updateDepartment = asyncHandler(async (req, res) => {
+    const { name, description } = req.body;
+
+    const dept = await Department.findById(req.params.id);
+    if (!dept) { res.status(404); throw new Error('Department not found'); }
+
+    if (name && name.trim() !== dept.name) {
+        const duplicate = await Department.findOne({ name: name.trim(), _id: { $ne: dept._id } });
+        if (duplicate) { res.status(400); throw new Error('Department name already in use'); }
+        dept.name = name.trim();
+    }
+    if (typeof description === 'string') dept.description = description.trim();
+
+    await dept.save();
+    res.json({ message: 'Department updated successfully', department: dept });
+});
+
+// @desc    Delete department
+// @route   DELETE /api/admin/departments/:id
+// @access  Private/Admin
+const deleteDepartment = asyncHandler(async (req, res) => {
+    const dept = await Department.findById(req.params.id);
+    if (!dept) { res.status(404); throw new Error('Department not found'); }
+
+    await Department.deleteOne({ _id: dept._id });
+    res.json({ message: 'Department deleted successfully' });
+});
+
 // @desc    Create department
 // @route   POST /api/admin/departments
 // @access  Private/Admin
@@ -328,6 +359,57 @@ const createModule = asyncHandler(async (req, res) => {
     res.status(201).json({ module: moduleDoc });
 });
 
+// @desc    Update a module
+// @route   PUT /api/admin/modules/:id
+// @access  Private/Admin
+const updateModule = asyncHandler(async (req, res) => {
+    const { name, code, description, department, academicYear, academicSemester } = req.body;
+
+    const moduleDoc = await Module.findById(req.params.id);
+    if (!moduleDoc) {
+        res.status(404);
+        throw new Error('Module not found');
+    }
+
+    // Check code uniqueness if it changed
+    if (code && code.trim().toUpperCase() !== moduleDoc.code) {
+        const duplicate = await Module.findOne({ code: code.trim().toUpperCase(), _id: { $ne: moduleDoc._id } });
+        if (duplicate) {
+            res.status(400);
+            throw new Error('Module code already in use');
+        }
+        moduleDoc.code = code.trim().toUpperCase();
+    }
+
+    if (name) moduleDoc.name = name.trim();
+    if (typeof description === 'string') moduleDoc.description = description.trim();
+    if (department) {
+        const deptDoc = await Department.findById(department);
+        if (!deptDoc) { res.status(404); throw new Error('Department not found'); }
+        moduleDoc.department = department;
+    }
+    if (academicYear) moduleDoc.academicYear = academicYear;
+    if (academicSemester) moduleDoc.academicSemester = academicSemester;
+
+    await moduleDoc.save();
+    await moduleDoc.populate('department', 'name');
+    res.json({ message: 'Module updated successfully', module: moduleDoc });
+});
+
+// @desc    Delete a module
+// @route   DELETE /api/admin/modules/:id
+// @access  Private/Admin
+const deleteModule = asyncHandler(async (req, res) => {
+    const moduleDoc = await Module.findById(req.params.id);
+    if (!moduleDoc) {
+        res.status(404);
+        throw new Error('Module not found');
+    }
+
+    await Module.deleteOne({ _id: moduleDoc._id });
+    res.json({ message: 'Module deleted successfully' });
+});
+
 // @desc    Get modules for assignment UI
 // @route   GET /api/admin/modules
 // @access  Private/Admin
@@ -356,6 +438,10 @@ module.exports = {
     getStatistics,
     getDepartments,
     createDepartment,
+    updateDepartment,
+    deleteDepartment,
     createModule,
+    updateModule,
+    deleteModule,
     getModules,
 };

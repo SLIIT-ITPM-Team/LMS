@@ -1,40 +1,23 @@
-import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { courseApi } from '../../api/course.api';
 
 const SummaryViewer = ({ course, onDownloadComplete }) => {
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     if (!course.summaryPdfUrl) {
       toast.error('No PDF available for download');
       return;
     }
 
-    setIsDownloading(true);
-
-    try {
-      const response = await courseApi.downloadPDF(course.summaryPdfUrl);
-      
-      // Create download link
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${course.title.replace(/\s+/g, '_')}_summary.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      toast.success('PDF downloaded successfully');
-      onDownloadComplete && onDownloadComplete();
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download PDF');
-    } finally {
-      setIsDownloading(false);
-    }
+    // Direct link download — avoids blob/proxy issues entirely
+    const filename = `${course.title.replace(/\s+/g, '_')}_summary.pdf`;
+    const link = document.createElement('a');
+    link.href = course.summaryPdfUrl;          // e.g. /uploads/course-summary-xyz.pdf
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.success('PDF download started');
+    onDownloadComplete && onDownloadComplete();
   };
 
   const handleCopyToClipboard = async () => {
@@ -61,20 +44,10 @@ const SummaryViewer = ({ course, onDownloadComplete }) => {
           </button>
           <button
             onClick={handleDownloadPDF}
-            disabled={isDownloading || !course.summaryPdfUrl}
+            disabled={!course.summaryPdfUrl}
             className="px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isDownloading ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Downloading...
-              </span>
-            ) : (
-              'Download PDF'
-            )}
+            Download PDF
           </button>
         </div>
       </div>
@@ -82,12 +55,34 @@ const SummaryViewer = ({ course, onDownloadComplete }) => {
       {/* Summary Content */}
       {course.summaryText ? (
         <>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="prose prose-indigo max-w-none">
-              <p className="text-gray-800 leading-relaxed">
-                {course.summaryText}
-              </p>
-            </div>
+          <div className="bg-gray-50 rounded-lg p-5 space-y-3">
+            {course.summaryText.split('\n').map((line, i) => {
+              const trimmed = line.trim();
+              if (!trimmed) return null;
+              // Bold heading: **text**
+              if (/^\*\*(.+)\*\*$/.test(trimmed)) {
+                return (
+                  <h3 key={i} className="text-base font-bold text-blue-800 mt-4 first:mt-0">
+                    {trimmed.replace(/\*\*/g, '')}
+                  </h3>
+                );
+              }
+              // Bullet: * text or - text
+              if (/^[*-]\s+/.test(trimmed)) {
+                return (
+                  <div key={i} className="flex gap-2 text-gray-700 text-sm leading-relaxed">
+                    <span className="text-blue-500 mt-0.5 shrink-0">•</span>
+                    <span>{trimmed.replace(/^[*-]\s+/, '').replace(/\*\*/g, '')}</span>
+                  </div>
+                );
+              }
+              // Normal paragraph
+              return (
+                <p key={i} className="text-gray-800 text-sm leading-relaxed">
+                  {trimmed.replace(/\*\*/g, '')}
+                </p>
+              );
+            })}
           </div>
 
           {/* Course Info */}
