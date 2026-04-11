@@ -1,75 +1,69 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
-  BookOpenCheck,
-  CirclePlay,
-  GraduationCap,
-  Layers,
+  BarChart3,
+  Award,
   MonitorPlay,
   ShieldCheck,
   Sparkles,
   Star,
-  UserRound,
-  Users,
-  Zap,
-  Trophy,
   Target,
-  BarChart3,
   ChevronRight,
   Rocket,
-  Clock,
-  Award,
+  GraduationCap,
+  Users,
   CheckCircle,
 } from "lucide-react";
 import Footer from "../components/layout/Footer";
 
+/* ─── Data ────────────────────────────────────────────────────────────── */
 const features = [
   {
     title: "Adaptive Learning Paths",
     description: "Personalized courses tailored to your learning style and pace.",
     icon: Target,
-    gradient: "from-blue-500 to-cyan-500",
+    color: "bg-blue-100 text-blue-600",
   },
   {
     title: "Interactive Lectures",
     description: "Engaging video content with quizzes and instant feedback.",
     icon: MonitorPlay,
-    gradient: "from-purple-500 to-pink-500",
+    color: "bg-indigo-100 text-indigo-600",
   },
   {
     title: "Real-time Progress",
     description: "Track your achievements with detailed analytics and insights.",
     icon: BarChart3,
-    gradient: "from-green-500 to-emerald-500",
+    color: "bg-emerald-100 text-emerald-600",
   },
   {
     title: "Verified Certificates",
     description: "Earn industry-recognized certificates upon completion.",
     icon: Award,
-    gradient: "from-orange-500 to-red-500",
+    color: "bg-amber-100 text-amber-600",
   },
   {
     title: "AI-Powered Summaries",
     description: "Get intelligent summaries and quick notes from lectures.",
     icon: Sparkles,
-    gradient: "from-indigo-500 to-purple-500",
+    color: "bg-purple-100 text-purple-600",
   },
   {
     title: "Secure Assessments",
     description: "Fair and secure quiz system with plagiarism detection.",
     icon: ShieldCheck,
-    gradient: "from-rose-500 to-orange-500",
+    color: "bg-rose-100 text-rose-600",
   },
 ];
 
 const stats = [
-  { value: "2,500+", label: "Active Students", delay: 0 },
-  { value: "60+", label: "Courses Available", delay: 0.1 },
-  { value: "95%", label: "Completion Rate", delay: 0.2 },
-  { value: "4.9★", label: "Average Rating", delay: 0.3 },
+  { value: "2,500+", label: "Active Students", icon: Users },
+  { value: "60+", label: "Courses Available", icon: BookOpen },
+  { value: "95%", label: "Completion Rate", icon: CheckCircle },
+  { value: "4.9★", label: "Average Rating", icon: Star },
 ];
 
 const testimonials = [
@@ -77,19 +71,22 @@ const testimonials = [
     name: "Kamal Perera",
     role: "CS Student",
     content: "This LMS transformed how I learn. The interactive content and quizzes really helped!",
-    avatar: "👨‍💻",
+    initials: "KP",
+    color: "bg-blue-500",
   },
   {
     name: "Priya Silva",
     role: "IT Major",
     content: "The certificate programs are industry-recognized. Highly recommend!",
-    avatar: "👩‍💼",
+    initials: "PS",
+    color: "bg-indigo-500",
   },
   {
     name: "Roshan Kumar",
     role: "Data Science Student",
     content: "Best learning platform I've used. Great instructors and support!",
-    avatar: "👨‍🎓",
+    initials: "RK",
+    color: "bg-emerald-500",
   },
 ];
 
@@ -100,385 +97,413 @@ const departments = [
   { name: "Engineering", icon: "⚙️", courses: 9 },
 ];
 
-// Animated Background Component
-const AnimatedBackground = () => (
-  <div className="absolute inset-0 overflow-hidden">
-    <motion.div
-      className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-blue-400 to-cyan-300 opacity-20 blur-3xl"
-      animate={{ y: [0, 30, 0], x: [0, 20, 0] }}
-      transition={{ duration: 8, repeat: Infinity }}
+/* ─── Decorative SVG curves (matching screenshot) ─────────────────────── */
+const DecorativeCurves = () => (
+  <svg
+    className="pointer-events-none absolute inset-0 h-full w-full"
+    viewBox="0 0 900 620"
+    fill="none"
+    preserveAspectRatio="xMidYMid slice"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle cx="520" cy="300" r="230" stroke="#BFDBFE" strokeWidth="1.5" />
+    <circle cx="520" cy="300" r="290" stroke="#BFDBFE" strokeWidth="1" opacity="0.5" />
+    <path
+      d="M60 400 Q260 100 560 260"
+      stroke="#93C5FD"
+      strokeWidth="1.5"
+      fill="none"
     />
-    <motion.div
-      className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-tr from-purple-400 to-pink-300 opacity-20 blur-3xl"
-      animate={{ y: [0, -30, 0], x: [0, -20, 0] }}
-      transition={{ duration: 10, repeat: Infinity }}
+    <path
+      d="M0 480 Q200 200 500 340"
+      stroke="#BFDBFE"
+      strokeWidth="1"
+      fill="none"
     />
-    <motion.div
-      className="absolute top-1/2 left-1/2 h-60 w-60 rounded-full bg-gradient-to-b from-indigo-300 to-blue-200 opacity-15 blur-3xl"
-      animate={{ scale: [1, 1.2, 1] }}
-      transition={{ duration: 12, repeat: Infinity }}
-    />
+  </svg>
+);
+
+/* ─── Hero visual (right side) ──────────────────────────────────────────── */
+const HeroVisual = () => (
+  <div className="relative flex items-center justify-center">
+    {/* Big blue circle */}
+    <div className="relative h-72 w-72 md:h-96 md:w-96">
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-2xl shadow-blue-300/50" />
+
+      {/* Inner ring */}
+      <div className="absolute inset-4 rounded-full border-2 border-white/20" />
+
+      {/* Floating course cards */}
+      <motion.div
+        className="absolute -left-10 top-8 rounded-2xl bg-white px-4 py-3 shadow-xl"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+            <BookOpen size={16} className="text-blue-600" />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-800">New Course</p>
+            <p className="text-[10px] text-slate-400">Data Structures</p>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute -right-8 bottom-16 rounded-2xl bg-white px-4 py-3 shadow-xl"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+            <Award size={16} className="text-emerald-600" />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-800">Certificate</p>
+            <p className="text-[10px] text-slate-400">Earned today</p>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute -right-6 top-6 rounded-2xl bg-white px-4 py-3 shadow-xl"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, delay: 1 }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
+            <Star size={16} className="text-purple-600" />
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-800">Top Rated</p>
+            <p className="text-[10px] text-slate-400">4.9 / 5.0</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Center icon */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
+          <GraduationCap size={40} className="text-white" />
+        </div>
+      </div>
+    </div>
   </div>
 );
 
-// Floating Card Component
-const FloatingCard = ({ delay }) => (
-  <motion.div
-    className="absolute rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-4"
-    animate={{ y: [0, -20, 0] }}
-    transition={{ duration: 4, delay, repeat: Infinity }}
-  >
-    <BookOpen className="h-6 w-6 text-white" />
-  </motion.div>
-);
-
+/* ─── Main Component ─────────────────────────────────────────────────── */
 const HomePage = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
-    setIsVisible(true);
+    const t = setInterval(
+      () => setActiveTestimonial((i) => (i + 1) % testimonials.length),
+      4000
+    );
+    return () => clearInterval(t);
   }, []);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
-    },
-  };
 
   return (
     <>
-      <motion.div
-        className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* HERO SECTION */}
-        <section className="relative py-20 px-4 md:px-8 pt-28 overflow-hidden">
-          <AnimatedBackground />
-          
-          <div className="mx-auto max-w-6xl relative z-10">
-            <motion.div
-              className="text-center mb-8"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <motion.div
-                className="inline-block"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+      {/* ── HERO ────────────────────────────────────────────────────── */}
+      <section className="relative min-h-screen overflow-hidden bg-[#EEF4FF] pt-24">
+        <DecorativeCurves />
+
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-16 md:grid-cols-2 md:px-12 lg:py-24">
+          {/* Left */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-semibold text-blue-700">
+              <Rocket size={14} /> Welcome to EduFlow LMS
+            </span>
+
+            <h1 className="mt-6 text-5xl font-black uppercase leading-tight tracking-tight text-slate-800 md:text-6xl lg:text-7xl">
+              Get the Best{" "}
+              <span className="text-blue-600">Courses</span>
+              <br />
+              and Upgrade
+              <br />
+              Your Skills
+            </h1>
+
+            <p className="mt-5 max-w-md text-base text-slate-500 md:text-lg">
+              Master your skills through interactive courses, expert instructors, and
+              real-world projects. Join thousands of students transforming their
+              careers at SLIIT.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-blue-300/50 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl"
               >
-                <span className="inline-flex items-center gap-2 rounded-full border border-blue-400/50 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-300 backdrop-blur-md">
-                  <Rocket size={16} /> Welcome to SLIIT LMS
-                </span>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              className="space-y-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <h1 className="text-5xl md:text-7xl font-black leading-tight bg-gradient-to-r from-blue-200 via-cyan-200 to-blue-300 bg-clip-text text-transparent">
-                Learn, Grow, Achieve Excellence
-              </h1>
-
-              <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
-                Master your skills through interactive courses, expert instructors, and real-world projects. 
-                Join thousands of students transforming their careers at SLIIT.
-              </p>
-
-              <motion.div
-                className="flex flex-wrap gap-4 justify-center pt-4"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
+                Join With Us
+                <ArrowRight size={18} />
+              </Link>
+              <Link
+                to="/courses"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-white px-8 py-3.5 text-base font-bold text-blue-700 transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
               >
-                <motion.div variants={itemVariants}>
-                  <Link
-                    to="/register"
-                    className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-8 py-4 text-base font-semibold text-white transition hover:shadow-lg hover:shadow-blue-500/50 hover:scale-105"
-                  >
-                    Start Learning Now
-                    <ArrowRight className="group-hover:translate-x-1 transition" size={18} />
-                  </Link>
-                </motion.div>
+                Explore Courses
+                <ChevronRight size={18} />
+              </Link>
+            </div>
 
-                <motion.div variants={itemVariants}>
-                  <Link
-                    to="/courses"
-                    className="inline-flex items-center gap-2 rounded-full border-2 border-cyan-400/50 px-8 py-4 text-base font-semibold text-cyan-300 backdrop-blur-md transition hover:bg-cyan-500/10 hover:border-cyan-300"
-                  >
-                    Explore Courses
-                    <ChevronRight size={18} />
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-
-            {/* Floating Cards in Hero */}
-            <motion.div
-              className="relative mt-16 h-64 hidden lg:block"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            >
-              <FloatingCard delay={0} />
-              <FloatingCard delay={0.3} />
-              <FloatingCard delay={0.6} />
-            </motion.div>
-          </div>
-        </section>
-
-        {/* STATS SECTION */}
-        <section className="relative py-16 px-4 md:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              className="grid grid-cols-2 md:grid-cols-4 gap-4"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              {stats.map((stat) => (
-                <motion.div
-                  key={stat.label}
-                  variants={itemVariants}
-                  className="group rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-400/20 p-6 backdrop-blur-md hover:border-blue-400/50 transition"
-                >
-                  <p className="text-sm text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-4xl md:text-5xl font-black text-transparent bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text">
-                    {stat.value}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* FEATURES SECTION */}
-        <section className="relative py-20 px-4 md:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-5xl font-black">
-                Feature-Rich Learning Platform
-              </h2>
-              <p className="mt-4 text-slate-400 max-w-2xl mx-auto">
-                Everything you need to succeed in your academic journey
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              {features.map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <motion.div
-                    key={feature.title}
-                    variants={itemVariants}
-                    className="group rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-6 hover:border-slate-600 transition overflow-hidden relative"
-                  >
-                    {/* Gradient background on hover */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition duration-300`}
-                    />
-
-                    <div className="relative z-10">
-                      <motion.div
-                        className={`inline-flex rounded-lg bg-gradient-to-br ${feature.gradient} p-3`}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                      >
-                        <Icon className="h-6 w-6 text-white" />
-                      </motion.div>
-
-                      <h3 className="mt-4 text-lg font-bold">{feature.title}</h3>
-                      <p className="mt-2 text-slate-400">{feature.description}</p>
-
-                      <motion.div
-                        className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-300"
-                        whileHover={{ x: 5 }}
-                      >
-                        Learn more <ChevronRight size={16} />
-                      </motion.div>
+            {/* Follow us row */}
+            <div className="mt-10 flex items-center gap-4">
+              <p className="text-sm font-semibold text-slate-500">Follow Us</p>
+              <div className="flex items-center gap-1">
+                {["f", "in", "tw", "yt"].map((s, i) => (
+                  <div key={s} className="flex items-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow">
+                      {s}
                     </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* DEPARTMENTS SECTION */}
-        <section className="relative py-20 px-4 md:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-5xl font-black">
-                Study Programs by Department
-              </h2>
-              <p className="mt-4 text-slate-400 max-w-2xl mx-auto">
-                Choose from various departments and specializations
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="grid md:grid-cols-2 lg:grid-cols-4 gap-5"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              {departments.map((dept) => (
-                <motion.div
-                  key={dept.name}
-                  variants={itemVariants}
-                  whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.2)" }}
-                  className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-6 cursor-pointer"
-                >
-                  <div className="text-4xl mb-3">{dept.icon}</div>
-                  <h3 className="text-xl font-bold">{dept.name}</h3>
-                  <p className="mt-2 text-sm text-slate-400">{dept.courses} courses</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* TESTIMONIALS SECTION */}
-        <section className="relative py-20 px-4 md:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-4xl md:text-5xl font-black">
-                What Students Say
-              </h2>
-              <p className="mt-4 text-slate-400 max-w-2xl mx-auto">
-                Hear from learners who have transformed their careers
-              </p>
-            </motion.div>
-
-            <div className="relative">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTestimonial}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.5 }}
-                  className="rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 md:p-12"
-                >
-                  <div className="flex items-center gap-1 mb-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={18} className="fill-yellow-400 text-yellow-400" />
-                    ))}
+                    {i < 3 && (
+                      <div className="h-px w-3 bg-blue-300" />
+                    )}
                   </div>
-
-                  <p className="text-xl md:text-2xl text-slate-200 mb-6">
-                    "{testimonials[activeTestimonial].content}"
-                  </p>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-4xl">{testimonials[activeTestimonial].avatar}</div>
-                    <div>
-                      <p className="font-bold text-lg">{testimonials[activeTestimonial].name}</p>
-                      <p className="text-sm text-slate-400">{testimonials[activeTestimonial].role}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              <div className="flex justify-center gap-2 mt-6">
-                {testimonials.map((_, idx) => (
-                  <motion.button
-                    key={idx}
-                    onClick={() => setActiveTestimonial(idx)}
-                    className={`h-3 rounded-full transition ${
-                      idx === activeTestimonial ? "bg-blue-500 w-8" : "bg-slate-600 w-3"
-                    }`}
-                    whileHover={{ scale: 1.2 }}
-                  />
                 ))}
               </div>
             </div>
+          </motion.div>
+
+          {/* Right */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="flex justify-center"
+          >
+            <HeroVisual />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── STATS ───────────────────────────────────────────────────── */}
+      <section className="bg-white py-16 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            {stats.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="group rounded-2xl border border-blue-100 bg-[#EEF4FF] p-6 text-center transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
+                    <Icon size={22} />
+                  </div>
+                  <p className="text-3xl font-black text-blue-700">{stat.value}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{stat.label}</p>
+                </motion.div>
+              );
+            })}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA SECTION */}
-        <section className="relative py-20 px-4 md:px-8">
-          <div className="mx-auto max-w-4xl">
+      {/* ── FEATURES ─────────────────────────────────────────────────── */}
+      <section className="bg-[#EEF4FF] py-20 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            className="mb-12 text-center"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest text-blue-600">
+              Why Choose Us
+            </p>
+            <h2 className="mt-2 text-4xl font-black text-slate-800 md:text-5xl">
+              Feature-Rich Learning Platform
+            </h2>
+            <p className="mt-3 text-slate-500">
+              Everything you need to succeed in your academic journey
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={f.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className="group rounded-2xl border border-white bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className={`inline-flex rounded-xl p-3 ${f.color}`}>
+                    <Icon size={22} />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-slate-800">{f.title}</h3>
+                  <p className="mt-2 text-sm text-slate-500">{f.description}</p>
+                  <div className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
+                    Learn more <ChevronRight size={15} />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DEPARTMENTS ──────────────────────────────────────────────── */}
+      <section className="bg-white py-20 px-6 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            className="mb-12 text-center"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest text-blue-600">
+              Departments
+            </p>
+            <h2 className="mt-2 text-4xl font-black text-slate-800 md:text-5xl">
+              Study Programs by Department
+            </h2>
+            <p className="mt-3 text-slate-500">
+              Choose from various departments and specializations
+            </p>
+          </motion.div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {departments.map((dept, i) => (
+              <motion.div
+                key={dept.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="group cursor-pointer rounded-2xl border border-blue-100 bg-[#EEF4FF] p-6 text-center transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
+              >
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-2xl shadow-lg shadow-blue-300/40">
+                  {dept.icon}
+                </div>
+                <h3 className="font-bold text-slate-800">{dept.name}</h3>
+                <p className="mt-1 text-sm text-slate-500">{dept.courses} courses</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ─────────────────────────────────────────────── */}
+      <section className="bg-[#EEF4FF] py-20 px-6 md:px-12">
+        <div className="mx-auto max-w-4xl">
+          <motion.div
+            className="mb-12 text-center"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest text-blue-600">
+              Testimonials
+            </p>
+            <h2 className="mt-2 text-4xl font-black text-slate-800 md:text-5xl">
+              What Students Say
+            </h2>
+          </motion.div>
+
+          <AnimatePresence mode="wait">
             <motion.div
-              className="rounded-3xl bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 p-1 overflow-hidden"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+              key={activeTestimonial}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-3xl border border-white bg-white p-10 shadow-lg md:p-14"
             >
-              <div className="rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 p-12 md:p-16 text-center">
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+              <div className="flex items-center gap-1 mb-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={18} className="fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <p className="text-xl font-medium text-slate-700 md:text-2xl">
+                "{testimonials[activeTestimonial].content}"
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white ${testimonials[activeTestimonial].color}`}
                 >
-                  <Sparkles className="mx-auto h-12 w-12 mb-4 text-cyan-400" />
-                </motion.div>
-
-                <h2 className="text-4xl md:text-5xl font-black">
-                  Ready to Transform Your Learning?
-                </h2>
-
-                <p className="mt-4 text-lg text-slate-300 max-w-2xl mx-auto">
-                  Join thousands of SLIIT students learning together, growing together, and achieving excellence together.
-                </p>
-
-                <motion.div
-                  className="mt-8"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-10 py-4 text-lg font-bold text-white hover:shadow-lg hover:shadow-blue-500/50 transition"
-                  >
-                    Create Your Account Now
-                    <Rocket size={20} />
-                  </Link>
-                </motion.div>
+                  {testimonials[activeTestimonial].initials}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">
+                    {testimonials[activeTestimonial].name}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {testimonials[activeTestimonial].role}
+                  </p>
+                </div>
               </div>
             </motion.div>
+          </AnimatePresence>
+
+          <div className="mt-6 flex justify-center gap-2">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveTestimonial(idx)}
+                className={`h-2.5 rounded-full transition-all ${
+                  idx === activeTestimonial
+                    ? "w-8 bg-blue-600"
+                    : "w-2.5 bg-blue-200"
+                }`}
+              />
+            ))}
           </div>
-        </section>
-      </motion.div>
+        </div>
+      </section>
+
+      {/* ── CTA ──────────────────────────────────────────────────────── */}
+      <section className="bg-white py-20 px-6 md:px-12">
+        <div className="mx-auto max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-blue-700 px-10 py-16 text-center shadow-2xl shadow-blue-300/40 md:px-16 md:py-20"
+          >
+            {/* Decorative orbs */}
+            <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-white/10" />
+
+            <Sparkles className="relative mx-auto mb-4 h-12 w-12 text-blue-200" />
+            <h2 className="relative text-3xl font-black text-white md:text-5xl">
+              Ready to Transform Your Learning?
+            </h2>
+            <p className="relative mt-4 text-base text-blue-100 md:text-lg">
+              Join thousands of SLIIT students learning together, growing together,
+              and achieving excellence together.
+            </p>
+            <div className="relative mt-8 flex flex-wrap justify-center gap-4">
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-bold text-blue-700 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                Create Your Account <Rocket size={18} />
+              </Link>
+              <Link
+                to="/courses"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-white/40 px-8 py-3.5 text-base font-bold text-white transition hover:bg-white/10"
+              >
+                Browse Courses <ChevronRight size={18} />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       <Footer />
     </>
