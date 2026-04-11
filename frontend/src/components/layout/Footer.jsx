@@ -11,16 +11,16 @@ const socialLinks = [
 
 const Footer = () => {
 	return (
-		<footer className="border-t border-white/10 bg-[#0B1F3B] text-gray-200">
+		<footer className="border-t border-white/10 bg-[#3451a3] text-gray-100">
 			<div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-4">
 				<div>
 					<div className="flex items-center gap-2">
-						<span className="rounded-lg bg-white px-2 py-1 text-xs font-bold text-indigo-700">
+						<span className="rounded-lg bg-white px-2 py-1 text-xs font-bold text-blue-700">
 							EF
 						</span>
 						<h3 className="text-xl font-bold">EduFlow LMS</h3>
 					</div>
-					<p className="mt-4 text-sm text-indigo-100">
+					<p className="mt-4 text-sm text-blue-100">
 						Empowering every learner with structured pathways, interactive
 						experiences, and measurable outcomes.
 					</p>
@@ -30,7 +30,7 @@ const Footer = () => {
 					<h4 className="text-sm font-semibold uppercase tracking-wider text-white">
 						Quick Links
 					</h4>
-					<ul className="mt-4 space-y-2 text-sm text-indigo-100">
+					<ul className="mt-4 space-y-2 text-sm text-blue-100">
 						<li>
 							<Link className="hover:text-yellow-200" to="/">
 								Home
@@ -58,7 +58,7 @@ const Footer = () => {
 					<h4 className="text-sm font-semibold uppercase tracking-wider text-white">
 						Departments
 					</h4>
-					<ul className="mt-4 space-y-2 text-sm text-indigo-100">
+					<ul className="mt-4 space-y-2 text-sm text-blue-100">
 						<li>Information Technology</li>
 						<li>Data Science</li>
 						<li>Software Engineering</li>
@@ -71,7 +71,7 @@ const Footer = () => {
 					</h4>
 					<a
 						href="mailto:support@eduflow.com"
-						className="mt-4 inline-flex items-center gap-2 text-sm text-indigo-100 hover:text-yellow-200"
+						className="mt-4 inline-flex items-center gap-2 text-sm text-blue-100 hover:text-yellow-200"
 					>
 						<Mail size={16} />
 						support@eduflow.com
@@ -82,7 +82,7 @@ const Footer = () => {
 								key={label}
 								href={href}
 								aria-label={label}
-								className="rounded-lg border border-white/25 p-2 text-indigo-100 transition hover:border-yellow-300 hover:text-yellow-200"
+								className="rounded-lg border border-white/25 p-2 text-blue-100 transition hover:border-yellow-300 hover:text-yellow-200"
 							>
 								<Icon size={16} />
 							</a>
