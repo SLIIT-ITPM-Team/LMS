@@ -239,6 +239,29 @@ const CourseView = () => {
                     View PDF Summary
                   </button>
                 )}
+                {course.summaryText ? (
+                  <button
+                    onClick={() =>
+                      navigate('/quizzes', {
+                        state: {
+                          summary: course.summaryText,
+                          courseTitle: course.title,
+                        },
+                      })
+                    }
+                    className="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-indigo-500 text-white font-semibold rounded-md hover:opacity-90 transition"
+                  >
+                    Attempt Quiz
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    title="No summary available to generate a quiz"
+                    className="w-full px-4 py-2 bg-gray-200 text-gray-400 font-semibold rounded-md cursor-not-allowed"
+                  >
+                    Attempt Quiz
+                  </button>
+                )}
               </div>
             </div>
 
