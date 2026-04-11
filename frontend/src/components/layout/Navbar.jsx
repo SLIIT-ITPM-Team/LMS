@@ -114,7 +114,7 @@ const Navbar = () => {
 	}, [isAuthenticated, notifOpen]);
 
 	return (
-		<header className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#0B1F3B] px-4 py-3 shadow-lg shadow-black/20 md:px-6">
+		<header className="fixed top-0 z-50 w-full border-b border-white/10 bg-[#3451a3] px-4 py-3 shadow-lg shadow-blue-950/40 md:px-6">
 			<nav className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
 				<Link to="/" className="flex items-center gap-2">
 					<span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-xs font-extrabold text-indigo-700 shadow-lg shadow-indigo-900/20">
