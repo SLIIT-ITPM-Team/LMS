@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { BookOpen, FileText, Inbox, ChevronRight } from "lucide-react";
+import { BookOpen, FileText, Inbox, ChevronRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
 import MaterialHeader from "../../components/materials/MaterialHeader";
 import MaterialUploadForm from "../../components/materials/MaterialUploadForm";
-import SearchBar from "../../components/materials/SearchBar";
 import CategoryCards from "../../components/materials/CategoryCards";
 import { getMaterialHierarchy } from "../../api/material.api";
 
@@ -157,7 +156,6 @@ const DepartmentSelector = ({ activeCategory, departments, isLoading, onSelectDe
 const Materials = () => {
 	const navigate = useNavigate();
 	const [activeCategory, setActiveCategory] = useState(categories[0].name);
-	const [query, setQuery] = useState("");
 	const [isSendMaterialOpen, setIsSendMaterialOpen] = useState(false);
 	const [departments, setDepartments] = useState([]);
 	const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
@@ -198,13 +196,15 @@ const Materials = () => {
 					onUpload={() => setIsSendMaterialOpen(true)}
 				/>
 
-				<div className="mt-6">
-					<SearchBar
-						value={query}
-						onChange={setQuery}
-						onAskAI={() => setQuery("Summarize Module 3 of Signals")}
-						onQuickSummary={() => navigate("/materials/quick-summary")}
-					/>
+				<div className="mt-6 flex justify-end">
+					<button
+						type="button"
+						onClick={() => navigate("/materials/quick-summary")}
+						className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-white/90 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-100 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-xl"
+					>
+						<Sparkles size={18} />
+						Quick Summary
+					</button>
 				</div>
 
 				<div className="mt-6">

@@ -1,5 +1,5 @@
 import React from "react";
-import { Filter, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 
 const MaterialHeader = ({ onFilter, onUpload }) => {
 	return (
@@ -17,14 +17,7 @@ const MaterialHeader = ({ onFilter, onUpload }) => {
 				</p>
 			</div>
 			<div className="flex flex-wrap items-center gap-3">
-				<button
-					type="button"
-					onClick={onFilter}
-					className="inline-flex items-center gap-2 rounded-xl border border-indigo-200/70 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
-				>
-					<Filter size={16} />
-					Filter
-				</button>
+
 				<button
 					type="button"
 					onClick={onUpload}
