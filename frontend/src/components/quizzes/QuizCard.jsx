@@ -116,38 +116,75 @@ function createCertificatePdfBlob({ userName, topic, score, date, certificateId 
   const topicLineOne = topicLines[0] || 'Quiz Topic';
   const topicLineTwo = topicLines[1] || '';
 
+  // Approximate centerings for dynamic text
+  const nameX = 297.5 - (safeName.length * 10);
+  const subtitle2 = 'has successfully completed the assessment for';
+  const subtitle2X = 297.5 - (subtitle2.length * 3.5);
+  const topic1X = 297.5 - (topicLineOne.length * 5.5);
+  const topic2X = 297.5 - (topicLineTwo.length * 5.5);
+  const desc = 'A comprehensive assessment evaluating proficiency and knowledge.';
+  const descX = 297.5 - (desc.length * 2.75);
+  const scoreX = 297.5 - (safeScore.length * 5.5);
+
   const stream = [
     'q',
-    createGradientBands(),
-    'Q',
-    '1 1 1 rg 24 24 547 794 re f',
-    '0.14 0.22 0.42 RG 2.2 w 34 34 527 774 re S',
-    '0.84 0.72 0.38 RG 0.9 w 46 46 503 750 re S',
-    '0.14 0.22 0.42 rg 46 728 503 52 re f',
-    '0.97 0.98 1 rg BT /F2 28 Tf 104 747 Td (CERTIFICATE OF ACHIEVEMENT) Tj ET',
-    '0.45 0.54 0.68 rg BT /F1 11 Tf 66 706 Td (Certificate ID: ' + safeCertificateId + ') Tj ET',
-    '0.37 0.44 0.57 rg BT /F1 13 Tf 220 662 Td (This certifies that) Tj ET',
-    '0.12 0.20 0.40 rg BT /F2 34 Tf 98 620 Td (' + safeName + ') Tj ET',
-    '0.82 0.86 0.93 RG 1 w 92 610 m 502 610 l S',
-    '0.37 0.44 0.57 rg BT /F1 12 Tf 118 580 Td (has successfully completed a professional quiz assessment) Tj ET',
-    '0.37 0.44 0.57 rg BT /F1 12 Tf 238 560 Td (on the topic) Tj ET',
-    '0.10 0.19 0.39 rg BT /F2 18 Tf 90 532 Td (' + topicLineOne + ') Tj ET',
-    '0.10 0.19 0.39 rg BT /F2 18 Tf 90 510 Td (' + topicLineTwo + ') Tj ET',
-    '0.96 0.97 0.99 rg 82 420 431 82 re f',
-    '0.83 0.88 0.96 RG 1 w 82 420 431 82 re S',
-    '0.18 0.26 0.45 rg BT /F1 13 Tf 104 468 Td (Final Score) Tj ET',
-    '0.11 0.49 0.32 rg BT /F2 30 Tf 228 460 Td (' + safeScore + ') Tj ET',
-    '0.42 0.49 0.60 rg BT /F1 11 Tf 104 438 Td (Date Issued: ' + safeDate + ') Tj ET',
-    '0.42 0.49 0.60 rg BT /F1 11 Tf 328 438 Td (Issued by LMS Quiz Engine) Tj ET',
-    '0.95 0.96 1 rg 422 300 96 96 re f',
-    '0.80 0.86 0.95 RG 1 w 422 300 96 96 re S',
-    '0.16 0.24 0.43 rg BT /F2 15 Tf 452 352 Td (LMS) Tj ET',
-    '0.16 0.24 0.43 rg BT /F1 9 Tf 437 338 Td (CERTIFIED) Tj ET',
-    '0.16 0.24 0.43 rg BT /F1 9 Tf 438 325 Td (ACHIEVEMENT) Tj ET',
-    '0.70 0.76 0.85 RG 1 w 78 214 m 286 214 l S',
-    '0.32 0.40 0.53 rg BT /F1 11 Tf 133 199 Td (Academic Coordinator) Tj ET',
-    '0.70 0.76 0.85 RG 1 w 315 214 m 520 214 l S',
-    '0.32 0.40 0.53 rg BT /F1 11 Tf 381 199 Td (Authorized Signature) Tj ET'
+    // Background
+    '0.97 0.98 0.99 rg 0 0 595 842 re f', // Light grey-blue bg
+    
+    // Outer Borders
+    '0.85 0.72 0.38 RG 3 w 20 20 555 802 re S', // Gold outer
+    '0.08 0.15 0.30 RG 1.5 w 26 26 543 790 re S', // Dark blue middle
+    '0.85 0.72 0.38 RG 0.5 w 30 30 535 782 re S', // Gold inner
+    
+    // Decorative watermark lines (subtle background geometry)
+    '0.93 0.94 0.95 RG 1 w 297.5 100 m 297.5 740 l S', // vertical center line
+    '0.93 0.94 0.95 RG 1 w 100 421 m 495 421 l S', // horizontal center line
+    '0.93 0.94 0.95 RG 1 w 197.5 321 200 200 re S', // center box
+    
+    // Top Center Icon (EF in Gold Box)
+    '0.85 0.72 0.38 RG 2 w 277.5 725 40 40 re S',
+    '0.08 0.15 0.30 rg BT /F2 20 Tf 287 737 Td (EF) Tj ET',
+    
+    // Title
+    '0.08 0.15 0.30 rg BT /F2 42 Tf 10 Tc 85 640 Td (CERTIFICATE) Tj 0 Tc ET',
+    '0.40 0.45 0.55 rg BT /F1 18 Tf 5 Tc 185 590 Td (OF COMPLETION) Tj 0 Tc ET',
+    
+    // Body Text
+    '0.40 0.45 0.55 rg BT /F1 14 Tf 212 510 Td (THIS IS TO CERTIFY THAT) Tj ET',
+    
+    // Name
+    `0.08 0.15 0.30 rg BT /F2 36 Tf ${nameX} 450 Td (${safeName}) Tj ET`,
+    '0.08 0.15 0.30 RG 2 w 120 425 m 475 425 l S', // Dark blue line under name
+    
+    // Subtitle 2
+    `0.40 0.45 0.55 rg BT /F1 14 Tf ${subtitle2X} 390 Td (${subtitle2}) Tj ET`,
+    
+    // Course Name Box
+    '0.93 0.95 0.97 rg 80 300 435 60 re f',
+    '0.08 0.15 0.30 RG 0.5 w 80 300 435 60 re S',
+    `0.08 0.15 0.30 rg BT /F2 20 Tf ${topic1X} 335 Td (${topicLineOne}) Tj ET`,
+    ...(topicLineTwo ? [`0.08 0.15 0.30 rg BT /F2 20 Tf ${topic2X} 310 Td (${topicLineTwo}) Tj ET`] : []),
+    
+    // Description
+    `0.40 0.45 0.55 rg BT /F1 11 Tf ${descX} 265 Td (${desc}) Tj ET`,
+    
+    // Bottom Left (Signature)
+    '0.08 0.15 0.30 RG 1 w 80 150 m 240 150 l S',
+    '0.08 0.15 0.30 rg BT /F2 12 Tf 105 130 Td (EduFlow Quiz Engine) Tj ET',
+    '0.40 0.45 0.55 rg BT /F1 10 Tf 115 115 Td (AUTHORIZED ISSUER) Tj ET',
+    
+    // Bottom Center (Gold Badge)
+    '0.85 0.72 0.38 rg 252.5 110 90 70 re f',
+    '0.08 0.15 0.30 rg BT /F2 14 Tf 268 155 Td (VERIFIED) Tj ET',
+    `1 1 1 rg BT /F2 18 Tf ${scoreX} 130 Td (${safeScore}) Tj ET`,
+    
+    // Bottom Right (ID / Date Box)
+    '0.93 0.95 0.97 rg 385 110 130 50 re f',
+    '0.85 0.72 0.38 RG 0.5 w 385 110 130 50 re S',
+    `0.40 0.45 0.55 rg BT /F2 8 Tf 392 140 Td (ID: ${safeCertificateId}) Tj ET`,
+    `0.40 0.45 0.55 rg BT /F1 10 Tf 395 120 Td (Date: ${safeDate}) Tj ET`,
+    
+    'Q'
   ].join('\n');
 
   const objects = [];
