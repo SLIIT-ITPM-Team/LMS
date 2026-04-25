@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BookOpen, FileText, Inbox, ChevronRight, Sparkles } from "lucide-react";
+import { BookOpen, FileText, Inbox, ChevronRight, Sparkles, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../../components/layout/Navbar";
@@ -73,14 +73,17 @@ const DepartmentCard = ({ department, index, icon: Icon, label, onClick }) => {
 		<button
 			type="button"
 			onClick={onClick}
-			className="group relative overflow-hidden rounded-2xl p-6 text-left shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus:outline-none"
+			className="group relative overflow-hidden rounded-3xl p-6 text-left shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/30 focus:outline-none"
 			style={{
 				background: `linear-gradient(135deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
 			}}
 		>
+			{/* Decorative glowing overlay on hover */}
+			<div className="absolute inset-0 bg-white opacity-0 transition-opacity duration-500 group-hover:opacity-10 pointer-events-none" />
+
 			{/* Decorative circles */}
 			<div
-				className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20"
+				className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full opacity-20 transition-transform duration-700 group-hover:scale-150 group-hover:rotate-45"
 				style={{ background: "white" }}
 			/>
 			<div
@@ -89,8 +92,8 @@ const DepartmentCard = ({ department, index, icon: Icon, label, onClick }) => {
 			/>
 
 			{/* Icon */}
-			<div className="relative mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur-sm">
-				<Icon size={22} />
+			<div className="relative mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-md transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 shadow-inner">
+				<Icon size={28} />
 			</div>
 
 			{/* Name & count */}
@@ -156,6 +159,7 @@ const DepartmentSelector = ({ activeCategory, departments, isLoading, onSelectDe
 const Materials = () => {
 	const navigate = useNavigate();
 	const [activeCategory, setActiveCategory] = useState(categories[0].name);
+	const [query, setQuery] = useState("");
 	const [isSendMaterialOpen, setIsSendMaterialOpen] = useState(false);
 	const [departments, setDepartments] = useState([]);
 	const [isLoadingDepartments, setIsLoadingDepartments] = useState(false);
@@ -182,10 +186,10 @@ const Materials = () => {
 
 	return (
 		<div className="relative min-h-screen bg-gradient-to-br from-indigo-50 via-pink-50 to-blue-50 text-slate-900">
-			<div className="pointer-events-none absolute inset-0 overflow-hidden">
-				<div className="absolute -left-24 -top-10 h-80 w-80 rounded-full bg-purple-300/25 blur-3xl" />
-				<div className="absolute right-10 top-20 h-72 w-72 rounded-full bg-pink-300/25 blur-3xl" />
-				<div className="absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-indigo-300/20 blur-3xl" />
+			<div className="pointer-events-none absolute inset-0 overflow-hidden mix-blend-multiply">
+				<div className="absolute -left-24 -top-10 h-[500px] w-[500px] animate-pulse rounded-full bg-purple-300/30 blur-[100px] duration-[6000ms]" />
+				<div className="absolute right-10 top-20 h-[400px] w-[400px] animate-pulse rounded-full bg-pink-300/30 blur-[90px] duration-[7000ms]" style={{ animationDelay: '1s' }} />
+				<div className="absolute bottom-0 left-1/4 h-[600px] w-[600px] animate-pulse rounded-full bg-indigo-300/30 blur-[120px] duration-[5000ms]" style={{ animationDelay: '2s' }} />
 			</div>
 
 			<Navbar />
@@ -196,11 +200,21 @@ const Materials = () => {
 					onUpload={() => setIsSendMaterialOpen(true)}
 				/>
 
-				<div className="mt-6 flex justify-end">
+				<div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+					<div className="group flex flex-1 items-center gap-3 rounded-2xl border border-indigo-100 bg-white/80 px-5 py-4 shadow-sm transition-all duration-300 focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-indigo-100 focus-within:ring-4 focus-within:ring-indigo-50 max-w-xl backdrop-blur-sm">
+						<Search className="text-indigo-400 transition-colors group-focus-within:text-indigo-600" size={20} />
+						<input
+							type="text"
+							value={query}
+							onChange={(event) => setQuery(event.target.value)}
+							placeholder="Search for departments..."
+							className="w-full bg-transparent text-base font-medium text-slate-800 outline-none placeholder:text-slate-400"
+						/>
+					</div>
 					<button
 						type="button"
 						onClick={() => navigate("/materials/quick-summary")}
-						className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-white/90 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-100 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-xl"
+						className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-white/90 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-100 transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-xl shrink-0"
 					>
 						<Sparkles size={18} />
 						Quick Summary
@@ -219,7 +233,7 @@ const Materials = () => {
 					{categoryConfig[activeCategory] ? (
 						<DepartmentSelector
 							activeCategory={activeCategory}
-							departments={departments}
+							departments={departments.filter(dept => dept.name.toLowerCase().includes(query.toLowerCase()))}
 							isLoading={isLoadingDepartments}
 							onSelectDepartment={handleSelectDepartment}
 						/>
